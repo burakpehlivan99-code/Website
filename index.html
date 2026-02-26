@@ -3,55 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Improved Website</title>
-    <style>
-        body { font-family: Arial, sans-serif; transition: background-color 0.5s; }
-        .dark-mode { background-color: #333; color: #fff; }
-        .category-grid { display: flex; flex-wrap: wrap; gap: 20px; }
-        .category-item { flex: 1 1 calc(33.333% - 20px); }
-    </style>
+    <title>Document</title>
 </head>
 <body>
-    <header>
-        <h1>Welcome to My Website</h1>
-        <button id="theme-toggle">Toggle Dark/Light Mode</button>
-    </header>
-    <main>
-        <section class="category-grid">
-            <div class="category-item">Category 1</div>
-            <div class="category-item">Category 2</div>
-            <div class="category-item">Category 3</div>
-            <div class="category-item">Category 4</div>
-            <div class="category-item">Category 5</div>
-        </section>
-        <article>
-            <h2>Blog Post Title</h2>
-            <p class="post-excerpt">This is a complete excerpt of the blog post that summarizes the content effectively.</p>
-            <p>Email: <input type="text" id="email" aria-label="Email address"></p>
-            <button id="submit">Submit</button>
-            <div class="social-media-links">
-                <a href="https://facebook.com" aria-label="Visit our Facebook page">Facebook</a>
-                <a href="https://twitter.com" aria-label="Visit our Twitter page">Twitter</a>
-                <a href="https://instagram.com" aria-label="Visit our Instagram page">Instagram</a>
-            </div>
-        </article>
-    </main>
-    <footer>
-        <p>&copy; 2026 My Website</p>
-    </footer>
-    <script>
-        document.getElementById('theme-toggle').onclick = function() {
-            document.body.classList.toggle('dark-mode');
-        };
-        document.getElementById('submit').onclick = function() {
-            const email = document.getElementById('email').value;
-            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (emailPattern.test(email)) {
-                alert('Email is valid!');
-            } else {
-                alert('Please enter a valid email.');
-            }
-        };
-    </script>
+    <h1>Hello, world!</h1>
 </body>
 </html>
