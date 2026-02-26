@@ -517,8 +517,14 @@
             max-width: 1200px;
             margin: 0 auto;
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            grid-template-columns: repeat(2, 1fr);
             gap: 2rem;
+        }
+
+        @media (max-width: 900px) {
+            .posts-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
         .post-card {
@@ -571,6 +577,8 @@
         .post-img-2 { background: linear-gradient(135deg, #1a0d3c, #3a1a5c); }
         .post-img-3 { background: linear-gradient(135deg, #0d3c1a, #1a5c3a); }
         .post-img-4 { background: linear-gradient(135deg, #3c0d0d, #5c1a1a); }
+        .post-img-5 { background: linear-gradient(135deg, #0d2e3c, #0a4a5c); }
+        .post-img-6 { background: linear-gradient(135deg, #2a1f0a, #3c3010); }
 
         .post-body {
             padding: 1.5rem;
@@ -660,8 +668,27 @@
             max-width: 1200px;
             margin: 0 auto;
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            grid-template-columns: repeat(4, 1fr);
             gap: 1.5rem;
+        }
+
+        @media (max-width: 1100px) {
+            .categories-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .categories-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .categories-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
         }
 
         .cat-card {
@@ -1054,10 +1081,6 @@
                 flex-direction: column;
             }
 
-            .posts-grid {
-                grid-template-columns: 1fr;
-            }
-
             .categories-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
@@ -1389,6 +1412,131 @@
 
         .toast.success { border-color: var(--accent); }
         .toast.error { border-color: #ef4444; }
+
+        /* ===== CATEGORY PAGE OVERLAY ===== */
+        .cat-page {
+            position: fixed;
+            inset: 0;
+            z-index: 2500;
+            background: var(--bg-primary);
+            overflow-y: auto;
+            transform: translateX(100%);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent-mid) transparent;
+        }
+
+        .cat-page.active {
+            transform: translateX(0);
+        }
+
+        .cat-page-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 7rem 2rem 5rem;
+        }
+
+        .cat-page-header {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .cat-page-back {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 0.6rem 1.2rem;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .cat-page-back:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .cat-page-title-wrap {
+            flex: 1;
+        }
+
+        .cat-page-label {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            color: var(--accent);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 0.3rem;
+        }
+
+        .cat-page-title {
+            font-size: clamp(1.6rem, 3vw, 2.4rem);
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+
+        .cat-page-icon {
+            font-size: 3rem;
+            line-height: 1;
+        }
+
+        .cat-page-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 700px) {
+            .cat-page-grid { grid-template-columns: 1fr; }
+            .cat-page-inner { padding: 6rem 1.2rem 3rem; }
+        }
+
+        .cat-page-empty {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 5rem 2rem;
+            color: var(--text-muted);
+        }
+
+        .cat-page-empty .empty-icon {
+            font-size: 3rem;
+            display: block;
+            margin-bottom: 1rem;
+        }
+
+        .cat-page-empty p {
+            font-size: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        /* post-card in cat-page: remove the first-child full-width rule */
+        .cat-page .post-card:first-child {
+            grid-column: auto;
+            display: block;
+        }
+
+        .cat-page .post-card:first-child .post-img {
+            height: 220px;
+            min-height: unset;
+        }
+
+        .cat-page .post-card:first-child .post-body {
+            padding: 1.5rem;
+            display: block;
+        }
+
+        .cat-page .post-card:first-child .post-title {
+            font-size: 1.25rem;
+        }
 
         /* ===== ARTICLE MODAL ===== */
         .article-modal {
@@ -1771,7 +1919,7 @@
                 <div class="pulse"></div>
                 Yeni yazılar her hafta yayında
             </div>
-            <h1>Teknolojinin Nabzını<br><span class="gradient-text">Burak'la Tutun</span></h1>
+            <h1>Teknoloji, Sistem, Yaratıcılık,<br>Yazılım ve <span class="gradient-text">Kendim Hakkında</span><br>Basit Bir Blog.</h1>
             <p>Yapay zeka, yazılım geliştirme, siber güvenlik ve geleceğin teknolojileri hakkında derinlemesine analizler, güncel haberler ve pratik rehberler.</p>
             <div class="hero-actions">
                 <a href="#blog" class="btn-primary">Yazıları Keşfet →</a>
@@ -1779,16 +1927,16 @@
             </div>
             <div class="hero-stats">
                 <div class="hero-stat">
-                    <h3>150+</h3>
+                    <h3>21</h3>
                     <p>Makale</p>
                 </div>
                 <div class="hero-stat">
-                    <h3>25K+</h3>
+                    <h3>218</h3>
                     <p>Aylık Okuyucu</p>
                 </div>
                 <div class="hero-stat">
-                    <h3>4.8★</h3>
-                    <p>Okuyucu Puanı</p>
+                    <h3>4</h3>
+                    <p>Kategori</p>
                 </div>
             </div>
             <div class="terminal-line">
@@ -1886,6 +2034,126 @@
                     </div>
                 </div>
             </article>
+
+            <article class="post-card reveal" data-category="VMware" tabindex="0" role="article"
+                aria-label="VDS Mimarisi makalesini oku"
+                onclick="openArticle('vds-mimari')" onkeydown="if(event.key==='Enter')this.click()">
+                <div class="post-img">
+                    <div class="post-img-inner post-img-5" aria-hidden="true">🔀</div>
+                </div>
+                <div class="post-body">
+                    <div class="post-meta">
+                        <span class="post-tag">VCF / Ağ</span>
+                        <span class="post-date">8 Şubat 2026</span>
+                    </div>
+                    <h3 class="post-title">VCF Ortamlarında vSphere Distributed Switch (VDS) Mimarisi ve Tasarım İlkeleri</h3>
+                    <p class="post-excerpt">VCF kurulumunda ağ konfigürasyonunun temelini oluşturan VDS'in konumlanması, Management ve Workload Domain'lerdeki switch yapısı ve neden standart switch'in yetmediği.</p>
+                    <div class="post-footer">
+                        <span class="post-read-time">11 dk okuma</span>
+                        <div class="post-arrow" aria-hidden="true">→</div>
+                    </div>
+                </div>
+            </article>
+
+            <article class="post-card reveal" data-category="VMware" tabindex="0" role="article"
+                aria-label="VDS Uplink ve Load Balancing makalesini oku"
+                onclick="openArticle('vds-loadbalancing')" onkeydown="if(event.key==='Enter')this.click()">
+                <div class="post-img">
+                    <div class="post-img-inner post-img-6" aria-hidden="true">⚖️</div>
+                </div>
+                <div class="post-body">
+                    <div class="post-meta">
+                        <span class="post-tag">vSAN / Ağ</span>
+                        <span class="post-date">5 Şubat 2026</span>
+                    </div>
+                    <h3 class="post-title">vSAN Trafik Optimizasyonu için VDS Uplink ve Load Balancing Stratejileri</h3>
+                    <p class="post-excerpt">Route Based on Physical NIC Load kullanımı, LACP konfigürasyonları ve vSAN trafiği için en iyi performansı veren uplink eşleştirmeleri.</p>
+                    <div class="post-footer">
+                        <span class="post-read-time">9 dk okuma</span>
+                        <div class="post-arrow" aria-hidden="true">→</div>
+                    </div>
+                </div>
+            </article>
+
+            <article class="post-card reveal" data-category="VMware" tabindex="0" role="article"
+                aria-label="SDDC Manager Network Pool makalesini oku"
+                onclick="openArticle('sddc-network-pool')" onkeydown="if(event.key==='Enter')this.click()">
+                <div class="post-img">
+                    <div class="post-img-inner post-img-1" aria-hidden="true">🏗️</div>
+                </div>
+                <div class="post-body">
+                    <div class="post-meta">
+                        <span class="post-tag">VCF / SDDC</span>
+                        <span class="post-date">1 Şubat 2026</span>
+                    </div>
+                    <h3 class="post-title">VCF SDDC Manager ile Network Pool Yönetimi ve VDS Entegrasyonu</h3>
+                    <p class="post-excerpt">VCF bring-up öncesi Network Pool oluşturma, VLAN atamaları ve SDDC Manager'ın VDS üzerindeki Port Group'ları nasıl otomatik yapılandırdığı.</p>
+                    <div class="post-footer">
+                        <span class="post-read-time">10 dk okuma</span>
+                        <div class="post-arrow" aria-hidden="true">→</div>
+                    </div>
+                </div>
+            </article>
+
+            <article class="post-card reveal" data-category="VMware" tabindex="0" role="article"
+                aria-label="NIOC Yapılandırması makalesini oku"
+                onclick="openArticle('nioc-yapilandirma')" onkeydown="if(event.key==='Enter')this.click()">
+                <div class="post-img">
+                    <div class="post-img-inner post-img-2" aria-hidden="true">📡</div>
+                </div>
+                <div class="post-body">
+                    <div class="post-meta">
+                        <span class="post-tag">vSAN / NIOC</span>
+                        <span class="post-date">28 Ocak 2026</span>
+                    </div>
+                    <h3 class="post-title">vSAN ve vMotion Trafiği için NIOC (Network I/O Control) Yapılandırması</h3>
+                    <p class="post-excerpt">Sınırlı bant genişliğine sahip ortamlarda Shares ve Limits mekanizmaları ile vSAN trafiğine öncelik verme, trafik çakışmalarını önleme ve sistem kararlılığını artırma.</p>
+                    <div class="post-footer">
+                        <span class="post-read-time">8 dk okuma</span>
+                        <div class="post-arrow" aria-hidden="true">→</div>
+                    </div>
+                </div>
+            </article>
+
+            <article class="post-card reveal" data-category="VMware" tabindex="0" role="article"
+                aria-label="NSX-T VDS Yakınsaması makalesini oku"
+                onclick="openArticle('nsxt-vds')" onkeydown="if(event.key==='Enter')this.click()">
+                <div class="post-img">
+                    <div class="post-img-inner post-img-3" aria-hidden="true">🔗</div>
+                </div>
+                <div class="post-body">
+                    <div class="post-meta">
+                        <span class="post-tag">NSX-T / VCF</span>
+                        <span class="post-date">24 Ocak 2026</span>
+                    </div>
+                    <h3 class="post-title">NSX-T ile VDS 7.0/8.0 Yakınsaması: Yakınsak Sanal Switch (CVS) Yapısı</h3>
+                    <p class="post-excerpt">NSX-T'nin artık ayrı bir N-VDS yerine doğrudan VDS üzerinde çalışması, transport node konfigürasyonları ve bu birleşmenin yönetimsel avantajları.</p>
+                    <div class="post-footer">
+                        <span class="post-read-time">12 dk okuma</span>
+                        <div class="post-arrow" aria-hidden="true">→</div>
+                    </div>
+                </div>
+            </article>
+
+            <article class="post-card reveal" data-category="VMware" tabindex="0" role="article"
+                aria-label="vSAN Sorun Giderme makalesini oku"
+                onclick="openArticle('vsan-troubleshoot')" onkeydown="if(event.key==='Enter')this.click()">
+                <div class="post-img">
+                    <div class="post-img-inner post-img-4" aria-hidden="true">🔧</div>
+                </div>
+                <div class="post-body">
+                    <div class="post-meta">
+                        <span class="post-tag">vSAN / Troubleshoot</span>
+                        <span class="post-date">20 Ocak 2026</span>
+                    </div>
+                    <h3 class="post-title">vSAN Distributed Switch Üzerinde Sorun Giderme ve Performans İzleme</h3>
+                    <p class="post-excerpt">Port Mirroring, NetFlow kullanımı ve Health Check özelliklerinin vSAN ağ hatalarını (MTU uyumsuzlukları vb.) nasıl tespit ettiğini kapsamlı araçlar ve tekniklerle inceliyoruz.</p>
+                    <div class="post-footer">
+                        <span class="post-read-time">13 dk okuma</span>
+                        <div class="post-arrow" aria-hidden="true">→</div>
+                    </div>
+                </div>
+            </article>
         </div>
         <div class="view-all-wrap reveal">
             <button class="btn-secondary" onclick="showToast('Tüm yazılar sayfası çok yakında! 📚', 'success')" style="display:inline-flex;align-items:center;gap:8px;">
@@ -1893,6 +2161,23 @@
             </button>
         </div>
     </section>
+
+    <!-- CATEGORY PAGE -->
+    <div class="cat-page" id="catPage" role="dialog" aria-modal="true" aria-label="Kategori yazıları">
+        <div class="cat-page-inner">
+            <div class="cat-page-header">
+                <button class="cat-page-back" onclick="closeCatPage()" aria-label="Geri dön">
+                    ← Geri
+                </button>
+                <div class="cat-page-title-wrap">
+                    <span class="cat-page-label" id="catPageLabel">// Kategori</span>
+                    <h2 class="cat-page-title" id="catPageTitle">Yazılar</h2>
+                </div>
+                <span class="cat-page-icon" id="catPageIcon" aria-hidden="true"></span>
+            </div>
+            <div class="cat-page-grid" id="catPageGrid"></div>
+        </div>
+    </div>
 
     <!-- ARTICLE MODAL -->
     <div class="article-modal" id="articleModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
@@ -1946,23 +2231,10 @@
                 <div class="cat-name">Depolama & SAN</div>
                 <div class="cat-count">9 yazı</div>
             </div>
-            <div class="cat-card reveal" role="listitem button" tabindex="0" onclick="filterByCategory(this, 'Siber Güvenlik')" onkeydown="if(event.key==='Enter')this.click()" aria-label="Siber Güvenlik kategorisi">
-                <div class="cat-icon" aria-hidden="true">🔒</div>
-                <div class="cat-name">Siber Güvenlik</div>
-                <div class="cat-count">8 yazı</div>
-            </div>
-        </div>
-    </section>
-
-    <!-- NEWSLETTER -->
-    <section class="newsletter" id="bulten">
-        <div class="newsletter-box reveal">
-            <span class="section-label">// Bülten</span>
-            <h2>Haftalık Teknoloji Bülteni</h2>
-            <p>Her Pazartesi sabahı gelen kutuna taze teknoloji içerikleri. Spam yok, sadece kaliteli içerik.</p>
-            <div class="newsletter-form">
-                <input type="email" placeholder="ornek@email.com" />
-                <button type="button" onclick="subscribe()">Abone Ol</button>
+            <div class="cat-card reveal" role="listitem button" tabindex="0" onclick="filterByCategory(this, 'Microsoft')" onkeydown="if(event.key==='Enter')this.click()" aria-label="Microsoft ve Windows kategorisi">
+                <div class="cat-icon" aria-hidden="true">🪟</div>
+                <div class="cat-name">Microsoft / Windows</div>
+                <div class="cat-count">7 yazı</div>
             </div>
         </div>
     </section>
@@ -2001,6 +2273,19 @@
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
                     </a>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- NEWSLETTER -->
+    <section class="newsletter" id="bulten">
+        <div class="newsletter-box reveal">
+            <span class="section-label">// Bülten</span>
+            <h2>Haftalık Teknoloji Bülteni</h2>
+            <p>Her Pazartesi sabahı gelen kutuna taze teknoloji içerikleri. Spam yok, sadece kaliteli içerik.</p>
+            <div class="newsletter-form">
+                <input type="email" placeholder="ornek@email.com" />
+                <button type="button" onclick="subscribe()">Abone Ol</button>
             </div>
         </div>
     </section>
@@ -2419,6 +2704,235 @@
                     <strong>💡 Sonuç:</strong> vCenter HA kurumsal ortamlar için artık bir lüks değil, zorunluluktur. 30.000+ VM barındıran bir ortamda vCenter'ın 10 dakika bile erişilmez olması onlarca kritik süreç üzerinde domino etkisi yaratabilir. Doğru ağ tasarımı ve anti-affinity kurallarına dikkat edildiğinde, vCenter HA mükemmel bir dayanıklılık katmanı sunar.
                 </div>
                 `
+            },
+
+            'vds-mimari': {
+                tag: 'VCF / Ağ',
+                content: `
+                <span class="article-tag">VCF · Ağ Tasarımı</span>
+                <h1>VCF Ortamlarında vSphere Distributed Switch (VDS) Mimarisi ve Tasarım İlkeleri</h1>
+                <div class="article-meta-row">
+                    <span>📅 8 Şubat 2026</span><span>⏱ 11 dk okuma</span><span>✍️ Burak Pehlivanoğlu</span>
+                </div>
+                <p>VMware Cloud Foundation (VCF), kurumsal sanallaştırma ve private cloud altyapılarının tam yığın olarak yönetilmesini sağlayan entegre bir platform çözümüdür. Bu platformun ağ katmanının omurgasını oluşturan vSphere Distributed Switch (VDS), standart switch'in çok ötesinde merkezi yönetim, tutarlılık ve otomasyon imkânı sunar. VCF ortamında VDS, yalnızca bir ağ bileşeni değil; tüm domain'lerin birbirine bağlandığı stratejik bir yapı taşıdır.</p>
+
+                <h2>Standart Switch ile Distributed Switch Arasındaki Farklar</h2>
+                <p>vSphere Standard Switch (VSS), her ESXi host üzerinde bağımsız olarak yapılandırılan, host-yerel bir sanal switch'tir. Büyük ortamlarda her host'u ayrı ayrı konfigüre etme zorunluluğu tutarsızlıklara ve ciddi yönetim yüküne yol açar. vSphere Distributed Switch (VDS) ise vCenter Server üzerinde merkezi olarak yönetilen, çok sayıda host'u kapsayan sanal bir switch'tir; politika değişiklikleri tüm host'lara otomatik olarak yayılır.</p>
+
+                <table class="compare-table">
+                    <tr><th>Özellik</th><th>Standard Switch (VSS)</th><th>Distributed Switch (VDS)</th></tr>
+                    <tr><td>Kapsam</td><td>Host-yerel</td><td class="tag-green">Tüm cluster / domain</td></tr>
+                    <tr><td>Merkezi Yönetim</td><td class="tag-red">Hayır</td><td class="tag-green">Evet (vCenter)</td></tr>
+                    <tr><td>LACP Desteği</td><td class="tag-red">Yok</td><td class="tag-green">Tam destek</td></tr>
+                    <tr><td>NetFlow / Port Mirroring</td><td class="tag-red">Yok</td><td class="tag-green">Mevcut</td></tr>
+                    <tr><td>NIOC (Network I/O Control)</td><td class="tag-red">Yok</td><td class="tag-green">Mevcut</td></tr>
+                    <tr><td>VCF Uyumluluğu</td><td class="tag-red">Desteklenmiyor</td><td class="tag-green">Zorunlu</td></tr>
+                    <tr><td>NSX-T Entegrasyonu</td><td class="tag-red">Yok</td><td class="tag-green">Doğrudan entegre</td></tr>
+                </table>
+
+                <h2>VCF Neden VDS'i Şart Koşuyor?</h2>
+                <p>VCF'in mimarisi, tüm ağ konfigürasyonunun SDDC Manager tarafından otomatik olarak yönetilmesi üzerine kuruludur; yeni host ekleme, workload domain genişletme ve NSX-T transport node konfigürasyonu bu otomasyonun kapsamındadır. SDDC Manager, bu operasyonları yürütebilmek için tüm host'ların tutarlı bir ağ yapısına sahip olmasını gerektirir. VSS'nin host-yerel yapısı bu tutarlılığı garanti edemezken, VDS merkezi politika yönetimiyle bu gereksinimi doğal olarak karşılar.</p>
+
+                <h2>Management ve Workload Domain'lerde VDS Yapısı</h2>
+                <h3>Management Domain</h3>
+                <p>VCF bring-up sürecinde, Management Domain için iki ayrı VDS otomatik oluşturulur: yönetim/vMotion/vSAN trafiği için VDS-1 ve NSX-T overlay tünellerini taşıyan VDS-2. Bu ayrışma, farklı trafik türleri için izole uplink politikaları uygulanmasını kolaylaştırır.</p>
+
+                <h3>Workload Domain'ler</h3>
+                <p>VI Workload Domain'leri oluşturulduğunda, SDDC Manager her domain için bağımsız bir VDS yapısı konuşlandırır. Bu domain'ler arası izolasyon, olası bir ağ sorununu yalnızca ilgili domain ile sınırlar ve farklı iş uygulamalarına özel politika esnekliği tanır.</p>
+
+                <div class="callout">
+                    <strong>💡 Tasarım İlkesi:</strong> VCF kurulumuna başlamadan önce ağ tasarımını tam olarak tamamlayın. VLAN'ları, MTU değerlerini (Geneve için 9000 byte önerilir) ve uplink sayısını net olarak belirleyin. Bring-up sonrası VDS yapısını değiştirmek ciddi operasyonel karmaşıklık yaratır.
+                </div>
+                `
+            },
+
+            'vds-loadbalancing': {
+                tag: 'vSAN / Ağ',
+                content: `
+                <span class="article-tag">vSAN · Load Balancing</span>
+                <h1>vSAN Trafik Optimizasyonu için VDS Uplink ve Load Balancing Stratejileri</h1>
+                <div class="article-meta-row">
+                    <span>📅 5 Şubat 2026</span><span>⏱ 9 dk okuma</span><span>✍️ Burak Pehlivanoğlu</span>
+                </div>
+                <p>vSAN, depolama trafiğini doğrudan ESXi kernel ağ yığını üzerinden taşır; bu nedenle ağ katmanındaki her tasarım kararı doğrudan I/O performansını etkiler. Özellikle 10GbE ortamlarda doğru load balancing algoritmasının seçilmesi, vSAN cluster'ının teorik kapasitesine ulaşabilmesi için kritik öneme sahiptir.</p>
+
+                <h2>VDS Load Balancing Algoritmaları</h2>
+                <table class="compare-table">
+                    <tr><th>Algoritma</th><th>Nasıl Çalışır</th><th>vSAN için</th></tr>
+                    <tr><td>Route Based on Originating Port</td><td>VM'nin sanal port ID'sine göre sabit uplink atar</td><td class="tag-yellow">Düşük — uplink başına tek VM</td></tr>
+                    <tr><td>Route Based on IP Hash</td><td>Kaynak+hedef IP hash'ine göre yönlendirir</td><td class="tag-yellow">Orta — LACP gerektirir</td></tr>
+                    <tr><td>Route Based on Source MAC</td><td>Kaynak MAC adresine göre uplink seçer</td><td class="tag-yellow">Düşük</td></tr>
+                    <tr><td><strong>Route Based on Physical NIC Load</strong></td><td>Gerçek zamanlı NIC kullanımına göre dinamik dağılım</td><td class="tag-green">En iyi — önerilir</td></tr>
+                    <tr><td>Explicit Failover Order</td><td>Sıralı aktif/yedek yapı</td><td class="tag-red">Uygun değil</td></tr>
+                </table>
+
+                <h2>Route Based on Physical NIC Load (LBT)</h2>
+                <p>Bu algoritma, uplink kullanım oranını gerçek zamanlı izler (varsayılan eşik: %75). Bir uplink bu eşiği aşarsa, yeni trafik akışları otomatik olarak daha az yüklü uplink'e yönlendirilir. vSAN gibi yüksek I/O yoğunluklu iş yükleri için bu dinamik dengeleme, statik algoritmaların çok ötesinde verim sağlar. LBT için fiziksel switch konfigürasyonunda değişiklik gerekmez ve LACP gerektirmez.</p>
+
+                <h2>Uplink Tasarımı: vSAN Best Practice</h2>
+                <ul>
+                    <li><strong>Minimum 2 uplink:</strong> Her host için en az iki fiziksel NIC, tercihen farklı fiziksel switch'lere bağlı olmalı</li>
+                    <li><strong>Ayrıştırılmış VMkernel:</strong> vSAN trafiği için ayrı VMkernel port'u oluşturun ve aktif/yedek uplink atamasını diğer trafik türlerinden farklı yapın</li>
+                    <li><strong>Jumbo Frame (MTU 9000):</strong> Tüm vSAN iletişim yolu boyunca MTU değerinin 9000 byte olduğunu doğrulayın</li>
+                    <li><strong>NIOC ile birlikte kullan:</strong> Uplink yönetimini LBT algoritmasıyla, trafik önceliklendirmesini ise NIOC ile yapın</li>
+                </ul>
+
+                <div class="callout">
+                    <strong>💡 LACP ile IP Hash:</strong> Fiziksel altyapı LACP'yi destekliyorsa VDS üzerinde LAG oluşturup IP Hash kullanabilirsiniz. Ancak LACP yapılandırma hatası vSAN iletişimini tamamen kesebilir — üretim ortamına geçmeden önce mutlaka test ortamında doğrulayın.
+                </div>
+                `
+            },
+
+            'sddc-network-pool': {
+                tag: 'VCF / SDDC',
+                content: `
+                <span class="article-tag">VCF · SDDC Manager</span>
+                <h1>VCF SDDC Manager ile Network Pool Yönetimi ve VDS Entegrasyonu</h1>
+                <div class="article-meta-row">
+                    <span>📅 1 Şubat 2026</span><span>⏱ 10 dk okuma</span><span>✍️ Burak Pehlivanoğlu</span>
+                </div>
+                <p>VMware Cloud Foundation'ın en güçlü özelliklerinden biri, ağ konfigürasyonunu insan müdahalesi gerektirmeden otomatik olarak yönetebilmesidir. Bu otomasyonun temel yapı taşı olan Network Pool, SDDC Manager'ın yeni host'lar eklendiğinde ağ kaynaklarını nasıl tahsis edeceğini önceden belirleyen bir şablondur.</p>
+
+                <div class="callout">
+                    <strong>ℹ️ Kritik Nokta:</strong> Network Pool konfigürasyonu, VCF bring-up işleminden önce tamamlanmalıdır. Management Domain'in ağ ayarları bring-up JSON dosyasında yer alırken, Workload Domain'ler için Network Pool'lar SDDC Manager UI üzerinden oluşturulur.
+                </div>
+
+                <h2>Network Pool Oluşturma Adımları</h2>
+                <div class="step-grid">
+                    <div class="step-item"><div class="step-num">1</div><div class="step-body"><strong>SDDC Manager'a Giriş</strong><span>Sol menüden <strong>Network Settings → Network Pools → Add Network Pool</strong> yolunu izleyin.</span></div></div>
+                    <div class="step-item"><div class="step-num">2</div><div class="step-body"><strong>vMotion Ağ Konfigürasyonu</strong><span>vMotion VLAN ID'sini, MTU değerini, IP aralığını, subnet mask ve gateway bilgilerini girin. Bu VLAN'ın fiziksel switch'te trunk olarak geçirildiğinden emin olun.</span></div></div>
+                    <div class="step-item"><div class="step-num">3</div><div class="step-body"><strong>vSAN Ağ Konfigürasyonu</strong><span>vSAN VLAN ID'sini girin, MTU değerini 9000 (Jumbo Frame) olarak ayarlayın. vSAN için mutlaka ayrı bir VLAN ve IP subnet kullanın.</span></div></div>
+                    <div class="step-item"><div class="step-num">4</div><div class="step-body"><strong>IP Aralığı Doğrulaması</strong><span>Tanımladığınız IP aralığının, domain'e eklemek istediğiniz maksimum host sayısını karşıladığından emin olun. Her host için bir vMotion ve bir vSAN VMkernel IP'si gerekir.</span></div></div>
+                </div>
+
+                <h2>SDDC Manager'ın VDS Port Group Otomasyonu</h2>
+                <p>Network Pool tanımlandıktan sonra, bir Workload Domain oluşturulduğunda veya mevcut domain'e host eklendiğinde SDDC Manager şunları otomatik gerçekleştirir: VDS oluşturulur, vMotion ve vSAN VLAN'larına karşılık gelen Port Group'lar oluşturulur, her host için Pool'dan IP adresi çekilir, VMkernel portları oluşturulur ve ilgili port group'lara bağlanır, MTU ve teaming politikaları uygulanır.</p>
+
+                <div class="warning">
+                    <strong>⚠️ Manuel Müdahaleden Kaçının:</strong> SDDC Manager tarafından otomatik oluşturulan port group'ları veya VMkernel portlarını vSphere Client üzerinden manuel olarak değiştirmek, SDDC Manager'ın tutarlılık kontrollerinin başarısız olmasına ve sonraki otomasyon işlemlerinin bloke olmasına yol açabilir.
+                </div>
+                `
+            },
+
+            'nioc-yapilandirma': {
+                tag: 'vSAN / NIOC',
+                content: `
+                <span class="article-tag">vSAN · Network I/O Control</span>
+                <h1>vSAN ve vMotion Trafiği için NIOC (Network I/O Control) Yapılandırması</h1>
+                <div class="article-meta-row">
+                    <span>📅 28 Ocak 2026</span><span>⏱ 8 dk okuma</span><span>✍️ Burak Pehlivanoğlu</span>
+                </div>
+                <p>Kurumsal sanallaştırma ortamlarında tek bir fiziksel ağ bağlantısı üzerinden farklı trafik türleri eş zamanlı akar. Özellikle 10GbE ortamlarda yoğun bir vMotion operasyonu vSAN I/O'sunu tamamen engelleyebilir. Network I/O Control (NIOC), bu sorunu trafik sınıfları bazında bant genişliği önceliklendirmesi yaparak çözer.</p>
+
+                <h2>Önerilen NIOC Konfigürasyonu</h2>
+                <table class="compare-table">
+                    <tr><th>Trafik Sınıfı</th><th>Shares (Önerilen)</th><th>Limit</th><th>Açıklama</th></tr>
+                    <tr><td>vSAN</td><td class="tag-green">100 (En Yüksek)</td><td>Sınırsız</td><td>Her zaman öncelikli</td></tr>
+                    <tr><td>vMotion</td><td>50</td><td>4–6 Gbps</td><td>Burst'i sınırla</td></tr>
+                    <tr><td>Management</td><td>20</td><td>Sınırsız</td><td>Düşük, ama garantili</td></tr>
+                    <tr><td>Virtual Machine</td><td>30</td><td>Sınırsız</td><td>Genel VM trafiği</td></tr>
+                    <tr><td>iSCSI / NFS</td><td>50</td><td>Sınırsız</td><td>Varsa yüksek tut</td></tr>
+                </table>
+
+                <h2>NIOC Aktif Etme</h2>
+                <div class="step-grid">
+                    <div class="step-item"><div class="step-num">1</div><div class="step-body"><strong>VDS Ayarlarından NIOC'u Etkinleştir</strong><span>VDS → <strong>Edit Settings → Advanced</strong> sekmesi → "Network I/O Control" seçeneğini <strong>Enabled</strong> yapın.</span></div></div>
+                    <div class="step-item"><div class="step-num">2</div><div class="step-body"><strong>Resource Allocation'a Girin</strong><span>VDS → <strong>Configure → Resource Allocation</strong>. Trafik sınıflarının listelendiği ekran açılır.</span></div></div>
+                    <div class="step-item"><div class="step-num">3</div><div class="step-body"><strong>vSAN Sınıfını Düzenleyin</strong><span>vSAN satırını seçin, Shares değerini <strong>High (100)</strong> yapın, Limit'i boş bırakın (unlimited).</span></div></div>
+                    <div class="step-item"><div class="step-num">4</div><div class="step-body"><strong>vMotion Sınıfını Limitli Yapılandırın</strong><span>Shares: Normal (50). Limit: Toplam bant genişliğinin %50'si (10GbE için ~5 Gbps). Bu, yoğun migration dönemlerinde vSAN'ı korur.</span></div></div>
+                </div>
+
+                <div class="callout">
+                    <strong>💡 10GbE Ortamlar için Kritik Tavsiye:</strong> vSAN ve vMotion aynı 10GbE uplink'i paylaşıyorsa, vMotion Limit'ini maksimum 4-5 Gbps ile sınırlandırın. Aksi halde yoğun bir migration operasyonu vSAN'ı I/O timeout'a sürükleyebilir ve VM'lerin disk erişimini geçici olarak engelleyebilir.
+                </div>
+                `
+            },
+
+            'nsxt-vds': {
+                tag: 'NSX-T / VCF',
+                content: `
+                <span class="article-tag">NSX-T · VDS Yakınsaması</span>
+                <h1>NSX-T ile VDS 7.0/8.0 Yakınsaması: Yakınsak Sanal Switch (CVS) Yapısı</h1>
+                <div class="article-meta-row">
+                    <span>📅 24 Ocak 2026</span><span>⏱ 12 dk okuma</span><span>✍️ Burak Pehlivanoğlu</span>
+                </div>
+                <p>NSX-T'nin ilk sürümlerinde overlay ağ trafiğini taşımak için N-VDS adı verilen ayrı bir sanal switch kullanılıyordu. Bu yaklaşım, her ESXi host'ta hem VDS hem de N-VDS'in paralel olarak yönetilmesini gerektiriyor; konfigürasyon karmaşıklığını artırıyor ve bakım yükünü ikiye katlıyordu. NSX-T 3.0 ve vSphere 7.0 ile birlikte tanıtılan yakınsak mimari, bu iki yapıyı tek bir VDS çatısı altında birleştirdi.</p>
+
+                <h2>Eski Mimari: Paralel N-VDS Sorunları</h2>
+                <ul>
+                    <li>Her iki switch'in uplink, port group ve politikalarının bağımsız olarak yönetilmesi</li>
+                    <li>Fiziksel NIC'lerin iki switch arasında bölünmesi (NIC başına daha az bant genişliği)</li>
+                    <li>Transport node konfigürasyonlarının ayrı bir iş akışıyla yönetilmesi</li>
+                    <li>Sorun gidermede iki switch katmanının eş zamanlı incelenmesi gerekliliği</li>
+                </ul>
+
+                <h2>Yeni Mimari: Yakınsak Sanal Switch (CVS)</h2>
+                <table class="compare-table">
+                    <tr><th>Özellik</th><th>Eski Mimari (N-VDS)</th><th>Yeni Mimari (CVS)</th></tr>
+                    <tr><td>Switch Sayısı</td><td class="tag-red">2 (VDS + N-VDS)</td><td class="tag-green">1 (VDS)</td></tr>
+                    <tr><td>NIC Kullanımı</td><td class="tag-red">Bölünmüş</td><td class="tag-green">Birleşik / Daha verimli</td></tr>
+                    <tr><td>NIOC Kapsamı</td><td class="tag-red">Yalnızca VDS trafiği</td><td class="tag-green">Tüm trafik (NSX dahil)</td></tr>
+                    <tr><td>Yönetim Karmaşıklığı</td><td class="tag-red">Yüksek</td><td class="tag-green">Düşük</td></tr>
+                    <tr><td>vSphere 7+ Desteği</td><td class="tag-yellow">Destekleniyor (legacy)</td><td class="tag-green">Önerilen yol</td></tr>
+                </table>
+
+                <h2>CVS'de Transport Node Konfigürasyonu</h2>
+                <div class="step-grid">
+                    <div class="step-item"><div class="step-num">1</div><div class="step-body"><strong>Mevcut VDS'i Tanır</strong><span>NSX Manager, host üzerindeki VDS'i keşfeder ve NSX transport işlevleri için kullanılmak üzere seçer. Yeni bir switch oluşturmaz.</span></div></div>
+                    <div class="step-item"><div class="step-num">2</div><div class="step-body"><strong>TEP VMkernel Portu Oluşturur</strong><span>VDS üzerinde Tunnel Endpoint (TEP) VMkernel port'u otomatik oluşturulur. Bu port, Geneve tünellerinin başlangıç/bitiş noktasıdır.</span></div></div>
+                    <div class="step-item"><div class="step-num">3</div><div class="step-body"><strong>NSX-T Segment'lerini VDS'e Bağlar</strong><span>NSX-T Segment'leri doğrudan VDS port group'larına eşlenir. VM'ler bu port group'lara bağlanarak NSX politikalarından yararlanır.</span></div></div>
+                </div>
+
+                <div class="callout">
+                    <strong>💡 VCF'te CVS:</strong> VCF 4.0 ve sonrasında oluşturulan tüm ortamlar CVS mimarisini kullanır. SDDC Manager, Workload Domain oluşturulurken transport node profilini otomatik olarak CVS yapısıyla konfigüre eder.
+                </div>
+                `
+            },
+
+            'vsan-troubleshoot': {
+                tag: 'vSAN / Troubleshoot',
+                content: `
+                <span class="article-tag">vSAN · Sorun Giderme</span>
+                <h1>vSAN Distributed Switch Üzerinde Sorun Giderme ve Performans İzleme</h1>
+                <div class="article-meta-row">
+                    <span>📅 20 Ocak 2026</span><span>⏱ 13 dk okuma</span><span>✍️ Burak Pehlivanoğlu</span>
+                </div>
+                <p>vSAN cluster'ında yaşanan performans sorunlarının büyük çoğunluğunun köküne inildiğinde, ağ katmanında bir yapılandırma hatası ya da bant genişliği yetersizliği bulunur. MTU uyumsuzluğu, yanlış teaming politikası veya uplink saturasyonu gibi sorunlar vSAN'ın tamamen durmasına bile yol açabilir.</p>
+
+                <h2>vSAN Health Check: İlk Durağınız</h2>
+                <p><strong>Cluster → Monitor → vSAN → Health</strong> yolundan ulaşılan bu servis kritik kontroller çalıştırır:</p>
+                <ul>
+                    <li><strong>vSAN Network Health:</strong> Tüm host'ların vSAN VMkernel üzerinden birbirleriyle iletişim kurabildiğini doğrular</li>
+                    <li><strong>MTU Check:</strong> Jumbo Frame konfigüre edilmişse tüm zincirde 9000 byte paketlerin iletilebildiğini test eder</li>
+                    <li><strong>Network Latency:</strong> Host'lar arası round-trip time'ı ölçer; vSAN için 1ms altında olması önerilir</li>
+                    <li><strong>Network Bandwidth:</strong> Mevcut throughput kapasitesini test eder</li>
+                </ul>
+
+                <div class="callout">
+                    <strong>💡 MTU Uyumsuzluğu:</strong> En sık karşılaşılan vSAN ağ sorunu MTU uyumsuzluğudur. VMkernel port MTU'su 9000 olarak ayarlanmış ancak fiziksel switch'te jumbo frame aktif edilmemişse, Health Check "MTU Mismatch" hatası verir ve paket kayıpları başlar.
+                </div>
+
+                <h2>Port Mirroring ve NetFlow ile Analiz</h2>
+                <p><strong>Port Mirroring:</strong> VDS → Configure → Port Mirroring → Add yoluyla bir session oluşturun. vSAN VMkernel portuna karşılık gelen VDS port'unu kaynak olarak seçin, Wireshark çalıştıran bir analiz VM'ini hedef gösterin. Geneve tünel başlıklarını, MTU değerlerini ve yeniden iletim oranlarını analiz edin.</p>
+                <p><strong>NetFlow:</strong> VDS → Configure → NetFlow ekranından collector IP ve portunu girin (standart: UDP/2055). İzlemek istediğiniz port group'ları NetFlow için aktif edin. Hangi VM'in en çok bant genişliği tükettiğini görselleştirebilirsiniz.</p>
+
+                <h2>Yaygın Sorunlar ve Çözümleri</h2>
+                <table class="compare-table">
+                    <tr><th>Sorun</th><th>Olası Neden</th><th>Çözüm</th></tr>
+                    <tr><td>Network Connectivity Failed</td><td>VMkernel IP veya VLAN yanlış</td><td>VMkernel konfigürasyonunu ve fiziksel switch VLAN'ını doğrula</td></tr>
+                    <tr><td>MTU Mismatch</td><td>Fiziksel switch'te Jumbo Frame aktif değil</td><td>Switch port ve trunk konfigürasyonunu güncelle</td></tr>
+                    <tr><td>Yüksek vSAN Latency</td><td>Bant genişliği doygunluğu veya yanlış teaming</td><td>NIOC yapılandır, LBT algoritmasına geç</td></tr>
+                    <tr><td>Düzensiz vMotion Hataları</td><td>NIOC'ta vMotion limiti çok düşük</td><td>vMotion Shares değerini artır</td></tr>
+                    <tr><td>Tek Uplink Üzerinde Tüm Trafik</td><td>Yanlış teaming politikası</td><td>LBT veya LACP konfigürasyonunu gözden geçir</td></tr>
+                </table>
+
+                <h2>ESXtop ile Gerçek Zamanlı Ağ Metrikleri</h2>
+                <p>ESXi host'una SSH bağlantısıyla <code>esxtop</code> çalıştırın, ağ istatistikleri için <kbd>n</kbd> tuşuna basın. Kritik metrikler: <strong>%DRPTX / %DRPRX</strong> (paket kayıp oranları — sıfır olmalı), <strong>MbTX/s ve MbRX/s</strong> (anlık throughput), <strong>PKTTX/s ve PKTRX/s</strong> (paket hızları).</p>
+
+                <div class="callout">
+                    <strong>💡 Pro Tip:</strong> vSAN ağ sorunlarını proaktif olarak önlemek için Aria Operations üzerinde şu alarmları konfigüre edin: vSAN network latency &gt; 1ms, vSAN bandwidth utilization &gt; 80%, ve vSAN health check failure.
+                </div>
+                `
             }
         };
 
@@ -2447,6 +2961,7 @@
                 closeArticle();
                 closeSearch();
                 closeMobileMenu();
+                closeCatPage();
             }
         });
         function toggleTheme() {
@@ -2574,6 +3089,12 @@
             { title: 'vCenter Server Kurulum Adımları: Sıfırdan Üretime', tag: 'VMware', id: 'vcenter-kurulum' },
             { title: 'Omnissa Horizon VDI: Connection Server Kurulum ve Yapılandırma Rehberi', tag: 'VDI', id: 'horizon-vdi' },
             { title: 'vCenter High Availability (HA): Best Practice Konfigürasyon Rehberi', tag: 'HA & Güvenilirlik', id: 'vcenter-ha' },
+            { title: 'VCF Ortamlarında vSphere Distributed Switch (VDS) Mimarisi ve Tasarım İlkeleri', tag: 'VCF / Ağ', id: 'vds-mimari' },
+            { title: 'vSAN Trafik Optimizasyonu için VDS Uplink ve Load Balancing Stratejileri', tag: 'vSAN / Ağ', id: 'vds-loadbalancing' },
+            { title: 'VCF SDDC Manager ile Network Pool Yönetimi ve VDS Entegrasyonu', tag: 'VCF / SDDC', id: 'sddc-network-pool' },
+            { title: 'vSAN ve vMotion Trafiği için NIOC (Network I/O Control) Yapılandırması', tag: 'vSAN / NIOC', id: 'nioc-yapilandirma' },
+            { title: 'NSX-T ile VDS 7.0/8.0 Yakınsaması: Yakınsak Sanal Switch (CVS) Yapısı', tag: 'NSX-T / VCF', id: 'nsxt-vds' },
+            { title: 'vSAN Distributed Switch Üzerinde Sorun Giderme ve Performans İzleme', tag: 'vSAN / Troubleshoot', id: 'vsan-troubleshoot' },
         ];
 
         function openSearch() {
@@ -2624,33 +3145,94 @@
             }
         });
 
-        // ===== CATEGORY FILTER =====
-        function filterByCategory(el, category) {
-            // Toggle active state
-            const wasActive = el.classList.contains('active-cat');
-            document.querySelectorAll('.cat-card').forEach(c => c.classList.remove('active-cat'));
+        // ===== CATEGORY PAGE =====
+        // All posts data for category filtering
+        const allPosts = [
+            { id: 'sanal-platform',   category: 'Sanallaştırma', tag: 'Sanallaştırma',     date: '24 Şubat 2026', readTime: '14 dk', icon: '🖥️', bg: 'post-img-1', title: 'Sanallaştırma Platformları: Broadcom VMware, Huawei FusionSphere & Açık Kaynak Alternatifleri', excerpt: 'Broadcom\'un VMware\'i satın almasının ardından lisans politikasında yapılan köklü değişiklikler kurumsal dünyayı sarstı. Huawei FusionSphere, Proxmox ve diğer alternatiflerin detaylı karşılaştırması.' },
+            { id: 'vcenter-kurulum', category: 'Sanallaştırma', tag: 'VMware',             date: '20 Şubat 2026', readTime: '11 dk', icon: '⚙️', bg: 'post-img-2', title: 'vCenter Server Kurulum Adımları: Sıfırdan Üretime', excerpt: 'VCSA (vCenter Server Appliance) kurulumunu pre-check\'ten post-deployment konfigürasyonuna kadar tüm adımlarıyla anlatan kapsamlı bir rehber.' },
+            { id: 'horizon-vdi',     category: 'VDI',            tag: 'VDI',               date: '16 Şubat 2026', readTime: '13 dk', icon: '🖱️', bg: 'post-img-3', title: 'Omnissa Horizon VDI: Connection Server Kurulum ve Yapılandırma Rehberi', excerpt: 'Horizon Connection Server\'ı adım adım kuruyoruz; lisanslama, Composer entegrasyonu ve ilk desktop pool\'a kadar her şey burada.' },
+            { id: 'vcenter-ha',      category: 'Sanallaştırma', tag: 'HA & Güvenilirlik', date: '12 Şubat 2026', readTime: '10 dk', icon: '🛡️', bg: 'post-img-4', title: 'vCenter High Availability (HA): Best Practice Konfigürasyon Rehberi', excerpt: 'Active-Passive-Witness mimarisi, ağ gereksinimleri ve failover senaryoları ile vCenter HA yapılandırması.' },
+            { id: 'vds-mimari',      category: 'VMware',         tag: 'VCF / Ağ',         date: '8 Şubat 2026',  readTime: '11 dk', icon: '🔀', bg: 'post-img-5', title: 'VCF Ortamlarında vSphere Distributed Switch (VDS) Mimarisi ve Tasarım İlkeleri', excerpt: 'VCF kurulumunda ağ konfigürasyonunun temelini oluşturan VDS\'in konumlanması ve Management/Workload Domain\'lerdeki switch yapısı.' },
+            { id: 'vds-loadbalancing', category: 'VMware',       tag: 'vSAN / Ağ',        date: '5 Şubat 2026',  readTime: '9 dk',  icon: '⚖️', bg: 'post-img-6', title: 'vSAN Trafik Optimizasyonu için VDS Uplink ve Load Balancing Stratejileri', excerpt: 'Route Based on Physical NIC Load kullanımı, LACP konfigürasyonları ve vSAN trafiği için en iyi performansı veren uplink eşleştirmeleri.' },
+            { id: 'sddc-network-pool', category: 'VMware',       tag: 'VCF / SDDC',       date: '1 Şubat 2026',  readTime: '10 dk', icon: '🏗️', bg: 'post-img-1', title: 'VCF SDDC Manager ile Network Pool Yönetimi ve VDS Entegrasyonu', excerpt: 'VCF bring-up öncesi Network Pool oluşturma, VLAN atamaları ve SDDC Manager\'ın VDS üzerindeki Port Group\'ları nasıl otomatik yapılandırdığı.' },
+            { id: 'nioc-yapilandirma', category: 'VMware',       tag: 'vSAN / NIOC',      date: '28 Ocak 2026',  readTime: '8 dk',  icon: '📡', bg: 'post-img-2', title: 'vSAN ve vMotion Trafiği için NIOC (Network I/O Control) Yapılandırması', excerpt: 'Shares ve Limits mekanizmaları ile vSAN trafiğine öncelik verme, trafik çakışmalarını önleme ve sistem kararlılığını artırma.' },
+            { id: 'nsxt-vds',         category: 'VMware',        tag: 'NSX-T / VCF',      date: '24 Ocak 2026',  readTime: '12 dk', icon: '🔗', bg: 'post-img-3', title: 'NSX-T ile VDS 7.0/8.0 Yakınsaması: Yakınsak Sanal Switch (CVS) Yapısı', excerpt: 'NSX-T\'nin artık ayrı bir N-VDS yerine doğrudan VDS üzerinde çalışması ve transport node konfigürasyonlarının yönetimsel avantajları.' },
+            { id: 'vsan-troubleshoot', category: 'VMware',       tag: 'vSAN / Troubleshoot', date: '20 Ocak 2026', readTime: '13 dk', icon: '🔧', bg: 'post-img-4', title: 'vSAN Distributed Switch Üzerinde Sorun Giderme ve Performans İzleme', excerpt: 'Port Mirroring, NetFlow kullanımı ve Health Check özellikleriyle vSAN ağ hatalarını (MTU uyumsuzlukları vb.) tespit etme.' },
+        ];
 
-            if (!wasActive) {
-                el.classList.add('active-cat');
-                document.querySelectorAll('#postsGrid .post-card').forEach(card => {
-                    const cardCat = card.dataset.category;
-                    if (cardCat && cardCat.toLowerCase().includes(category.toLowerCase())) {
-                        card.style.opacity = '1';
-                        card.style.transform = '';
-                    } else {
-                        card.style.opacity = '0.3';
-                        card.style.transform = 'scale(0.98)';
-                    }
-                });
-                document.getElementById('blog').scrollIntoView({ behavior: 'smooth', block: 'start' });
-                showToast('"' + el.querySelector('.cat-name').textContent + '" kategorisi seçildi', 'success');
+        // Category metadata
+        const categoryMeta = {
+            'Sanallaştırma': { icon: '🖥️', label: 'Sanallaştırma Platformları' },
+            'VMware':         { icon: '⚙️', label: 'VMware / vSphere' },
+            'VDI':            { icon: '🖱️', label: 'VDI & Horizon' },
+            'HA':             { icon: '🛡️', label: 'HA & Güvenilirlik' },
+            'Linux':          { icon: '🐧', label: 'Linux & Unix' },
+            'Cloud':          { icon: '☁️', label: 'Cloud & Altyapı' },
+            'Storage':        { icon: '💾', label: 'Depolama & SAN' },
+            'Microsoft':      { icon: '🪟', label: 'Microsoft / Windows' },
+        };
+
+        function filterByCategory(el, category) {
+            // Remove active from all category cards
+            document.querySelectorAll('.cat-card').forEach(c => c.classList.remove('active-cat'));
+            el.classList.add('active-cat');
+
+            // Build matching posts
+            const matched = allPosts.filter(p =>
+                p.category.toLowerCase() === category.toLowerCase() ||
+                p.tag.toLowerCase().includes(category.toLowerCase())
+            );
+
+            const meta = categoryMeta[category] || { icon: '📁', label: category };
+
+            // Populate category page
+            document.getElementById('catPageLabel').textContent = '// ' + category;
+            document.getElementById('catPageTitle').textContent = meta.label + ' Yazıları';
+            document.getElementById('catPageIcon').textContent = meta.icon;
+
+            const grid = document.getElementById('catPageGrid');
+            if (matched.length === 0) {
+                grid.innerHTML = `
+                    <div class="cat-page-empty">
+                        <span class="empty-icon">🔍</span>
+                        <strong>Bu kategoride henüz yazı yok.</strong>
+                        <p>Yakında içerik ekleniyor, takipte kal!</p>
+                    </div>`;
             } else {
-                // Reset filter
-                document.querySelectorAll('#postsGrid .post-card').forEach(card => {
-                    card.style.opacity = '1';
-                    card.style.transform = '';
-                });
+                grid.innerHTML = matched.map(p => `
+                    <article class="post-card" tabindex="0" role="article"
+                        onclick="openArticle('${p.id}')" onkeydown="if(event.key==='Enter')this.click()"
+                        style="cursor:pointer; animation: fadeUp 0.5s ease both;">
+                        <div class="post-img">
+                            <div class="post-img-inner ${p.bg}">${p.icon}</div>
+                        </div>
+                        <div class="post-body">
+                            <div class="post-meta">
+                                <span class="post-tag">${p.tag}</span>
+                                <span class="post-date">${p.date}</span>
+                            </div>
+                            <h3 class="post-title">${p.title}</h3>
+                            <p class="post-excerpt">${p.excerpt}</p>
+                            <div class="post-footer">
+                                <span class="post-read-time">${p.readTime} okuma</span>
+                                <div class="post-arrow">→</div>
+                            </div>
+                        </div>
+                    </article>
+                `).join('');
             }
+
+            // Open the category page
+            const page = document.getElementById('catPage');
+            page.classList.add('active');
+            page.scrollTop = 0;
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeCatPage() {
+            document.getElementById('catPage').classList.remove('active');
+            document.querySelectorAll('.cat-card').forEach(c => c.classList.remove('active-cat'));
+            document.body.style.overflow = '';
         }
     </script>
 </body>
