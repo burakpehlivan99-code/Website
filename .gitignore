@@ -4,3 +4,6 @@
 !.dev.vars.example
 .env*
 !.env.example
+
+# Windows reserved filename (causes git indexing errors)
+nul

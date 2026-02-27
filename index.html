@@ -37,11 +37,10 @@ class="about-badge"<!DOCTYPE html>
 
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <!-- =====================================================
-         Siteni Genişletmek İçin:
-         1. posts/ klasörüne yeni bir .js dosyası ekle
-         2. Aşağıdaki listeye <script src="posts/yeni-makale.js"> ekle
-         3. data/posts.js'e metadata ekle
-         4. Bu dosyadaki posts-grid'e kart HTML'i ekle
+         YENİ MAKALE EKLEMEK İÇİN (sadece 2 adım):
+         1. posts/<id>.html  → makale içeriği (saf HTML)
+         2. data/posts.js    → allPosts dizisine metadata satırı ekle
+         Kartlar ve script tag'leri otomatik yönetilir.
          ===================================================== -->
 
     <!-- Stiller -->
@@ -132,7 +131,7 @@ class="about-badge"<!DOCTYPE html>
             </div>
             <div class="hero-stats">
                 <div class="hero-stat">
-                    <h3>10</h3>
+                    <h3>11</h3>
                     <p>Makale</p>
                 </div>
                 <div class="hero-stat">
@@ -157,209 +156,8 @@ class="about-badge"<!DOCTYPE html>
             <h2 class="section-title">Öne Çıkan İçerikler</h2>
             <p class="section-subtitle">Sanallaştırma, altyapı ve sistem mühendisliği üzerine derinlemesine teknik rehberler</p>
         </div>
-        <div class="posts-grid" id="postsGrid">
-
-            <!-- FEATURED / BÜYÜK KART -->
-            <article class="post-card reveal" data-category="Sanallaştırma" tabindex="0" role="article"
-                aria-label="Sanallaştırma Platformları Karşılaştırması makalesini oku"
-                onclick="openArticle('sanal-platform')" onkeydown="if(event.key==='Enter')this.click()">
-                <div class="post-img">
-                    <div class="post-img-inner post-img-1" aria-hidden="true">🖥️</div>
-                </div>
-                <div class="post-body">
-                    <div class="post-meta">
-                        <span class="post-tag">Sanallaştırma</span>
-                        <span class="post-date">24 Şubat 2026</span>
-                    </div>
-                    <h3 class="post-title">Sanallaştırma Platformları: Broadcom VMware, Huawei FusionSphere & Açık Kaynak Alternatifleri</h3>
-                    <p class="post-excerpt">Broadcom'un VMware'i satın almasının ardından lisans politikasında yapılan köklü değişiklikler kurumsal dünyayı sarstı. Huawei FusionSphere, Proxmox ve diğer alternatiflerin artı/eksileriyle detaylı karşılaştırması.</p>
-                    <div class="post-footer">
-                        <span class="post-read-time">14 dk okuma</span>
-                        <div class="post-arrow" aria-hidden="true">→</div>
-                    </div>
-                </div>
-            </article>
-
-            <article class="post-card reveal" data-category="Sanallaştırma" tabindex="0" role="article"
-                aria-label="vCenter Server Kurulum makalesini oku"
-                onclick="openArticle('vcenter-kurulum')" onkeydown="if(event.key==='Enter')this.click()">
-                <div class="post-img">
-                    <div class="post-img-inner post-img-2" aria-hidden="true">⚙️</div>
-                </div>
-                <div class="post-body">
-                    <div class="post-meta">
-                        <span class="post-tag">VMware</span>
-                        <span class="post-date">20 Şubat 2026</span>
-                    </div>
-                    <h3 class="post-title">vCenter Server Kurulum Adımları: Sıfırdan Üretime</h3>
-                    <p class="post-excerpt">VCSA (vCenter Server Appliance) kurulumunu pre-check'ten post-deployment konfigürasyonuna kadar tüm adımlarıyla anlatan kapsamlı bir rehber.</p>
-                    <div class="post-footer">
-                        <span class="post-read-time">11 dk okuma</span>
-                        <div class="post-arrow" aria-hidden="true">→</div>
-                    </div>
-                </div>
-            </article>
-
-            <article class="post-card reveal" data-category="VDI" tabindex="0" role="article"
-                aria-label="Omnissa Horizon VDI Kurulum makalesini oku"
-                onclick="openArticle('horizon-vdi')" onkeydown="if(event.key==='Enter')this.click()">
-                <div class="post-img">
-                    <div class="post-img-inner post-img-3" aria-hidden="true">🖱️</div>
-                </div>
-                <div class="post-body">
-                    <div class="post-meta">
-                        <span class="post-tag">VDI</span>
-                        <span class="post-date">16 Şubat 2026</span>
-                    </div>
-                    <h3 class="post-title">Omnissa Horizon VDI: Connection Server Kurulum ve Yapılandırma Rehberi</h3>
-                    <p class="post-excerpt">Kurumsal masaüstü sanallaştırmanın omurgası olan Horizon Connection Server'ı adım adım kuruyoruz; lisanslama, Composer entegrasyonu ve ilk desktop pool'a kadar her şey burada.</p>
-                    <div class="post-footer">
-                        <span class="post-read-time">13 dk okuma</span>
-                        <div class="post-arrow" aria-hidden="true">→</div>
-                    </div>
-                </div>
-            </article>
-
-            <article class="post-card reveal" data-category="Sanallaştırma" tabindex="0" role="article"
-                aria-label="vCenter HA Konfigürasyonu makalesini oku"
-                onclick="openArticle('vcenter-ha')" onkeydown="if(event.key==='Enter')this.click()">
-                <div class="post-img">
-                    <div class="post-img-inner post-img-4" aria-hidden="true">🛡️</div>
-                </div>
-                <div class="post-body">
-                    <div class="post-meta">
-                        <span class="post-tag">HA & Güvenilirlik</span>
-                        <span class="post-date">12 Şubat 2026</span>
-                    </div>
-                    <h3 class="post-title">vCenter High Availability (HA): Best Practice Konfigürasyon Rehberi</h3>
-                    <p class="post-excerpt">vCenter Server'ınızın tek nokta arızası olmaması için vCenter HA nasıl yapılandırılır? Active-Passive-Witness mimarisi, ağ gereksinimleri ve failover senaryoları.</p>
-                    <div class="post-footer">
-                        <span class="post-read-time">10 dk okuma</span>
-                        <div class="post-arrow" aria-hidden="true">→</div>
-                    </div>
-                </div>
-            </article>
-
-            <article class="post-card reveal" data-category="VMware" tabindex="0" role="article"
-                aria-label="VDS Mimarisi makalesini oku"
-                onclick="openArticle('vds-mimari')" onkeydown="if(event.key==='Enter')this.click()">
-                <div class="post-img">
-                    <div class="post-img-inner post-img-5" aria-hidden="true">🔀</div>
-                </div>
-                <div class="post-body">
-                    <div class="post-meta">
-                        <span class="post-tag">VCF / Ağ</span>
-                        <span class="post-date">8 Şubat 2026</span>
-                    </div>
-                    <h3 class="post-title">VCF Ortamlarında vSphere Distributed Switch (VDS) Mimarisi ve Tasarım İlkeleri</h3>
-                    <p class="post-excerpt">VCF kurulumunda ağ konfigürasyonunun temelini oluşturan VDS'in konumlanması, Management ve Workload Domain'lerdeki switch yapısı ve neden standart switch'in yetmediği.</p>
-                    <div class="post-footer">
-                        <span class="post-read-time">11 dk okuma</span>
-                        <div class="post-arrow" aria-hidden="true">→</div>
-                    </div>
-                </div>
-            </article>
-
-            <article class="post-card reveal" data-category="VMware" tabindex="0" role="article"
-                aria-label="VDS Uplink ve Load Balancing makalesini oku"
-                onclick="openArticle('vds-loadbalancing')" onkeydown="if(event.key==='Enter')this.click()">
-                <div class="post-img">
-                    <div class="post-img-inner post-img-6" aria-hidden="true">⚖️</div>
-                </div>
-                <div class="post-body">
-                    <div class="post-meta">
-                        <span class="post-tag">vSAN / Ağ</span>
-                        <span class="post-date">5 Şubat 2026</span>
-                    </div>
-                    <h3 class="post-title">vSAN Trafik Optimizasyonu için VDS Uplink ve Load Balancing Stratejileri</h3>
-                    <p class="post-excerpt">Route Based on Physical NIC Load kullanımı, LACP konfigürasyonları ve vSAN trafiği için en iyi performansı veren uplink eşleştirmeleri.</p>
-                    <div class="post-footer">
-                        <span class="post-read-time">9 dk okuma</span>
-                        <div class="post-arrow" aria-hidden="true">→</div>
-                    </div>
-                </div>
-            </article>
-
-            <article class="post-card reveal" data-category="VMware" tabindex="0" role="article"
-                aria-label="SDDC Manager Network Pool makalesini oku"
-                onclick="openArticle('sddc-network-pool')" onkeydown="if(event.key==='Enter')this.click()">
-                <div class="post-img">
-                    <div class="post-img-inner post-img-1" aria-hidden="true">🏗️</div>
-                </div>
-                <div class="post-body">
-                    <div class="post-meta">
-                        <span class="post-tag">VCF / SDDC</span>
-                        <span class="post-date">1 Şubat 2026</span>
-                    </div>
-                    <h3 class="post-title">VCF SDDC Manager ile Network Pool Yönetimi ve VDS Entegrasyonu</h3>
-                    <p class="post-excerpt">VCF bring-up öncesi Network Pool oluşturma, VLAN atamaları ve SDDC Manager'ın VDS üzerindeki Port Group'ları nasıl otomatik yapılandırdığı.</p>
-                    <div class="post-footer">
-                        <span class="post-read-time">10 dk okuma</span>
-                        <div class="post-arrow" aria-hidden="true">→</div>
-                    </div>
-                </div>
-            </article>
-
-            <article class="post-card reveal" data-category="VMware" tabindex="0" role="article"
-                aria-label="NIOC Yapılandırması makalesini oku"
-                onclick="openArticle('nioc-yapilandirma')" onkeydown="if(event.key==='Enter')this.click()">
-                <div class="post-img">
-                    <div class="post-img-inner post-img-2" aria-hidden="true">📡</div>
-                </div>
-                <div class="post-body">
-                    <div class="post-meta">
-                        <span class="post-tag">vSAN / NIOC</span>
-                        <span class="post-date">28 Ocak 2026</span>
-                    </div>
-                    <h3 class="post-title">vSAN ve vMotion Trafiği için NIOC (Network I/O Control) Yapılandırması</h3>
-                    <p class="post-excerpt">Sınırlı bant genişliğine sahip ortamlarda Shares ve Limits mekanizmaları ile vSAN trafiğine öncelik verme, trafik çakışmalarını önleme ve sistem kararlılığını artırma.</p>
-                    <div class="post-footer">
-                        <span class="post-read-time">8 dk okuma</span>
-                        <div class="post-arrow" aria-hidden="true">→</div>
-                    </div>
-                </div>
-            </article>
-
-            <article class="post-card reveal" data-category="VMware" tabindex="0" role="article"
-                aria-label="NSX-T VDS Yakınsaması makalesini oku"
-                onclick="openArticle('nsxt-vds')" onkeydown="if(event.key==='Enter')this.click()">
-                <div class="post-img">
-                    <div class="post-img-inner post-img-3" aria-hidden="true">🔗</div>
-                </div>
-                <div class="post-body">
-                    <div class="post-meta">
-                        <span class="post-tag">NSX-T / VCF</span>
-                        <span class="post-date">24 Ocak 2026</span>
-                    </div>
-                    <h3 class="post-title">NSX-T ile VDS 7.0/8.0 Yakınsaması: Yakınsak Sanal Switch (CVS) Yapısı</h3>
-                    <p class="post-excerpt">NSX-T'nin artık ayrı bir N-VDS yerine doğrudan VDS üzerinde çalışması, transport node konfigürasyonları ve bu birleşmenin yönetimsel avantajları.</p>
-                    <div class="post-footer">
-                        <span class="post-read-time">12 dk okuma</span>
-                        <div class="post-arrow" aria-hidden="true">→</div>
-                    </div>
-                </div>
-            </article>
-
-            <article class="post-card reveal" data-category="VMware" tabindex="0" role="article"
-                aria-label="vSAN Sorun Giderme makalesini oku"
-                onclick="openArticle('vsan-troubleshoot')" onkeydown="if(event.key==='Enter')this.click()">
-                <div class="post-img">
-                    <div class="post-img-inner post-img-4" aria-hidden="true">🔧</div>
-                </div>
-                <div class="post-body">
-                    <div class="post-meta">
-                        <span class="post-tag">vSAN / Troubleshoot</span>
-                        <span class="post-date">20 Ocak 2026</span>
-                    </div>
-                    <h3 class="post-title">vSAN Distributed Switch Üzerinde Sorun Giderme ve Performans İzleme</h3>
-                    <p class="post-excerpt">Port Mirroring, NetFlow kullanımı ve Health Check özelliklerinin vSAN ağ hatalarını (MTU uyumsuzlukları vb.) nasıl tespit ettiğini kapsamlı araçlar ve tekniklerle inceliyoruz.</p>
-                    <div class="post-footer">
-                        <span class="post-read-time">13 dk okuma</span>
-                        <div class="post-arrow" aria-hidden="true">→</div>
-                    </div>
-                </div>
-            </article>
-        </div>
+        <!-- Kartlar app.js tarafından allPosts'tan otomatik render edilir -->
+        <div class="posts-grid" id="postsGrid"></div>
         <div class="view-all-wrap reveal">
             <button class="btn-secondary" onclick="showToast('Tüm yazılar sayfası çok yakında! 📚', 'success')" style="display:inline-flex;align-items:center;gap:8px;">
                 Tüm Yazıları Gör <span>→</span>
@@ -439,7 +237,7 @@ class="about-badge"<!DOCTYPE html>
             <div class="cat-card reveal" role="listitem button" tabindex="0" onclick="filterByCategory(this, 'Microsoft')" onkeydown="if(event.key==='Enter')this.click()" aria-label="Microsoft ve Windows kategorisi">
                 <div class="cat-icon" aria-hidden="true">💻</div>
                 <div class="cat-name">Microsoft / Windows</div>
-                <div class="cat-count">Yakında</div>
+                <div class="cat-count">1 yazı</div>
             </div>
         </div>
     </section>
@@ -510,21 +308,6 @@ class="about-badge"<!DOCTYPE html>
 
     <!-- Veri Dosyaları -->
     <script src="data/posts.js"></script>
-
-    <!-- articles objesi post scriptlerinden ÖNCE tanımlanmalı -->
-    <script>const articles = {};</script>
-
-    <!-- Makale İçerikleri: yeni makale eklerken buraya bir satır ekle -->
-    <script src="posts/sanal-platform.js"></script>
-    <script src="posts/vcenter-kurulum.js"></script>
-    <script src="posts/horizon-vdi.js"></script>
-    <script src="posts/vcenter-ha.js"></script>
-    <script src="posts/vds-mimari.js"></script>
-    <script src="posts/vds-loadbalancing.js"></script>
-    <script src="posts/sddc-network-pool.js"></script>
-    <script src="posts/nioc-yapilandirma.js"></script>
-    <script src="posts/nsxt-vds.js"></script>
-    <script src="posts/vsan-troubleshoot.js"></script>
 
     <!-- Uygulama Kodu -->
     <script src="assets/js/app.js"></script>

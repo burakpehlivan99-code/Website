@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(node:*)",
+      "Bash(magick:*)",
+      "Bash(convert:*)",
+      "Bash(where:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(powershell -ExecutionPolicy Bypass -File \"C:\\\\Users\\\\Burak\\\\Desktop\\\\Websitesi\\\\Website\\\\gen-og.ps1\")",
+      "Bash(del:*)",
+      "Bash(python3:*)",
+      "Bash(perl:*)",
+      "Bash(powershell.exe -Command \":*)",
+      "Bash(powershell.exe -NoProfile -Command \"Get-Command python3 -ErrorAction SilentlyContinue; Get-Command node -ErrorAction SilentlyContinue; $PSVersionTable.PSVersion\")",
+      "Bash(powershell.exe -NoProfile -Command \":*)",
+      "Bash(Get-Content \"C:\\\\Users\\\\Burak\\\\Desktop\\\\Websitesi\\\\Website\\\\assets\\\\css\\\\main.css\")",
+      "Bash(Measure-Object -Line)"
+    ]
+  }
+}

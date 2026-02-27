@@ -1,0 +1,289 @@
+﻿
+    <span class="article-tag">Microsoft · Active Directory</span>
+    <h1>Active Directory'de GPO Yönetimi: Oluşturma, Security Filtering ve Hardening Best Practice'leri</h1>
+    <div class="article-meta-row">
+        <span>📅 27 Şubat 2026</span>
+        <span>⏱ 16 dk okuma</span>
+        <span>✍️ Burak Pehlivanoğlu</span>
+    </div>
+
+    <p>Group Policy Objects (GPO), Active Directory ortamlarında yüzlerce hatta binlerce makine ve kullanıcı hesabını merkezi olarak yönetmenin temel taşıdır. Doğru yapılandırılmış bir GPO mimarisi; güvenlik standartlarını otomatik olarak uygular, yapılandırma kaymasını (configuration drift) önler ve uyumluluk gereksinimlerini karşılar. Ancak kötü tasarlanmış bir GPO yapısı; performans sorunlarına, güvenlik açıklarına ve yönetimi neredeyse imkânsız hale gelen karmaşık bir ortama yol açar.</p>
+
+    <p>Bu rehberde GPO oluşturmanın temel kavramlarından başlayarak <strong>Authenticated Users</strong> mekanizmasının nasıl çalıştığını, <strong>Security Filtering</strong> ile GPO'ları granüler olarak hedeflemeyi ve son olarak kurumsal ortamlarda uygulanması gereken <strong>GPO Hardening</strong> pratiklerini ele alacağız.</p>
+
+    <h2>1. Temel Kavramlar: GPO Nedir ve Nasıl Uygulanır?</h2>
+    <p>GPO, Active Directory nesnesi olarak Domain, Site veya OU (Organizational Unit) düzeyine <strong>linklenir (bağlanır)</strong>. GPO içindeki politikalar iki farklı düğüm altında toplanır:</p>
+
+    <ul>
+        <li><strong>Computer Configuration:</strong> Makinenin başlangıcında (boot/startup) uygulanır. Kullanıcıdan bağımsız çalışır. Servis konfigürasyonları, güvenlik duvarı kuralları, Windows Update politikaları bu düğüm altında tanımlanır.</li>
+        <li><strong>User Configuration:</strong> Kullanıcı oturum açtığında (logon) uygulanır. Masaüstü kısıtlamaları, yazılım kurulumları, drive mapping bu düğüm altında tanımlanır.</li>
+    </ul>
+
+    <div class="callout">
+        <strong>💡 GPO İşleme Sırası (LSDOU):</strong> Politikalar <strong>Local → Site → Domain → OU</strong> sırasıyla uygulanır. Alt OU'daki bir GPO üst OU'dakini override edebilir. Çakışan politikalarda <strong>son uygulanan kazanır</strong> — yani OU seviyesi önceliklidir.
+    </div>
+
+    <h2>2. GPO Oluşturma — Adım Adım</h2>
+    <p>Yeni bir GPO oluşturmak için <strong>Group Policy Management Console (GPMC)</strong> kullanılır. GPMC; Windows Server'da varsayılan olarak kurulu gelir, istemci makinelerde ise RSAT (Remote Server Administration Tools) paketi ile kurulabilir.</p>
+
+    <div class="step-grid">
+        <div class="step-item">
+            <div class="step-num">1</div>
+            <div class="step-body">
+                <strong>GPMC'yi Aç</strong>
+                <span><code>gpmc.msc</code> komutunu çalıştır veya Server Manager → Tools → Group Policy Management yolunu izle.</span>
+            </div>
+        </div>
+        <div class="step-item">
+            <div class="step-num">2</div>
+            <div class="step-body">
+                <strong>GPO Oluştur</strong>
+                <span>Sol panelden <em>Group Policy Objects</em> → sağ tıkla → <em>New</em>. İsimlendirme konvensiyonu önemlidir: <code>[Kapsam]-[İşlev]-[Hedef]</code> formatı önerilir. Örn: <code>CORP-SEC-Workstation-Hardening</code></span>
+            </div>
+        </div>
+        <div class="step-item">
+            <div class="step-num">3</div>
+            <div class="step-body">
+                <strong>GPO'yu Düzenle</strong>
+                <span>Oluşturulan GPO'ya sağ tıkla → <em>Edit</em>. Group Policy Management Editor açılır. Politikaları burada tanımla.</span>
+            </div>
+        </div>
+        <div class="step-item">
+            <div class="step-num">4</div>
+            <div class="step-body">
+                <strong>GPO'yu OU'ya Linkle</strong>
+                <span>Hedef OU'ya sağ tıkla → <em>Link an Existing GPO</em> → listeden oluşturduğun GPO'yu seç. GPO henüz uygulanmaz, filtreleme ayarları doğrulanana kadar bekle.</span>
+            </div>
+        </div>
+        <div class="step-item">
+            <div class="step-num">5</div>
+            <div class="step-body">
+                <strong>Filtre ve Test</strong>
+                <span>Security Filtering ve WMI Filter ayarlarını yap. Test grubuna uyguladıktan sonra <code>gpupdate /force</code> ve <code>gpresult /r</code> ile doğrula.</span>
+            </div>
+        </div>
+    </div>
+
+    <h2>3. Authenticated Users: Ne Anlama Gelir?</h2>
+    <p>Bir GPO oluşturulduğunda <strong>Security Filtering</strong> sekmesinde default olarak <code>Authenticated Users</code> grubu bulunur. Bu, domaine dahil olan ve başarıyla kimlik doğrulaması yapmış <strong>tüm kullanıcı ve bilgisayar hesaplarını</strong> kapsar.</p>
+
+    <div class="callout">
+        <strong>📌 Authenticated Users Nasıl Çalışır?</strong><br><br>
+        GPO'nun bir nesneye uygulanabilmesi için o nesnenin iki izne ihtiyacı vardır:<br>
+        <strong>1. Read</strong> — GPO'yu okuyabilmek için<br>
+        <strong>2. Apply Group Policy</strong> — GPO'yu uygulamak için<br><br>
+        <code>Authenticated Users</code> grubu varsayılan olarak her iki izni de taşır. Bu nedenle GPO, kapsam içindeki tüm nesnelere uygulanır.
+    </div>
+
+    <p><strong>Ne zaman Authenticated Users'ı kaldırmalısınız?</strong> Eğer GPO'yu yalnızca belirli bir gruba (örneğin sadece IT departmanına veya belirli bilgisayarlara) uygulamak istiyorsanız. Bu durumda Security Filtering devreye girer.</p>
+
+    <div class="warning">
+        <strong>⚠️ Dikkat — Computer Policy ve Authenticated Users:</strong> Bir GPO yalnızca <strong>Computer Configuration</strong> politikaları içeriyorsa, <code>Authenticated Users</code>'ı kaldırıp yerine yalnızca bilgisayar grubunu eklediğinizde GPO <strong>uygulanmaz</strong>. Bunun nedeni: bilgisayar hesabının GPO'yu okumak için önce <em>Authenticated Users</em> olarak oturum açması gerekir. Bu senaryoda bilgisayar hesabını doğrudan Security Filtering'e ekleyin veya <code>Domain Computers</code> grubunu kullanın.
+    </div>
+
+    <h2>4. Security Filtering — Granüler Hedefleme</h2>
+    <p>Security Filtering, GPO'nun <strong>kimlere uygulanacağını</strong> veya <strong>kimlere UYGULANMAYACAĞINI</strong> belirlemenizi sağlar. İki temel yöntem vardır:</p>
+
+    <h3>4.1 Security Filtering ile Dahil Etme (Allow)</h3>
+    <p>Bu yöntemde Authenticated Users kaldırılır ve yerine spesifik grup/hesap eklenir:</p>
+
+    <div class="step-grid">
+        <div class="step-item">
+            <div class="step-num">1</div>
+            <div class="step-body">
+                <strong>Authenticated Users'ı Kaldır</strong>
+                <span>GPMC → GPO → <em>Scope</em> sekmesi → Security Filtering → <code>Authenticated Users</code> seçili iken <em>Remove</em>.</span>
+            </div>
+        </div>
+        <div class="step-item">
+            <div class="step-num">2</div>
+            <div class="step-body">
+                <strong>Hedef Grubu Ekle</strong>
+                <span><em>Add</em> → hedef AD grubunu veya bilgisayar hesabını ekle. Örn: <code>GRP-IT-Admins</code> veya <code>GRP-Secure-Workstations</code>.</span>
+            </div>
+        </div>
+        <div class="step-item">
+            <div class="step-num">3</div>
+            <div class="step-body">
+                <strong>Domain Computers Read İzni Ver</strong>
+                <span>Eğer Computer Configuration kullanıyorsanız: GPO üzerinde sağ tıkla → <em>Edit</em> → Delegation sekmesi → Advanced → <code>Domain Computers</code> grubuna <strong>Read</strong> izni ver (Apply Group Policy vermeden).</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="callout">
+        <strong>💡 Neden Domain Computers'a Read?</strong> Bilgisayar hesabı GPO'yu işleyebilmek için önce GPO SYSVOL'den okuyabilmelidir. <em>Apply Group Policy</em> olmadan salt <em>Read</em> vermek, bilgisayarın GPO'yu görmesini ama uygulamasına izin vermez — yalnızca belirttiğiniz grup uygular.
+    </div>
+
+    <h3>4.2 Güvenlik İzinleri ile Dışlama (Deny)</h3>
+    <p>Belirli hesapları GPO kapsamından <strong>hariç tutmak</strong> için Delegation → Advanced üzerinden <code>Apply Group Policy</code> iznini <strong>Deny</strong> olarak ayarlayabilirsiniz. Ancak bu yöntem dikkatli kullanılmalıdır; Deny izinleri Allow izinlerini daima override eder.</p>
+
+    <table class="compare-table">
+        <tr><th>Yöntem</th><th>Kullanım Durumu</th><th>Risk</th></tr>
+        <tr>
+            <td>Security Filtering (Allow)</td>
+            <td class="tag-green">Belirli gruba uygula</td>
+            <td class="tag-green">Düşük</td>
+        </tr>
+        <tr>
+            <td>Delegation Deny</td>
+            <td>Belirli grubu hariç tut</td>
+            <td class="tag-red">Orta — nested grup çakışmaları</td>
+        </tr>
+        <tr>
+            <td>WMI Filter</td>
+            <td>OS versiyonu, RAM, donanım bazlı filtre</td>
+            <td>Düşük — ama GPO işleme süresini artırır</td>
+        </tr>
+        <tr>
+            <td>Loopback Processing</td>
+            <td>Kiosk/terminal sunucu senaryosu</td>
+            <td>Orta — yanlış modda tüm user policy'yi override eder</td>
+        </tr>
+    </table>
+
+    <h2>5. GPO Hardening — Kurumsal Güvenlik Best Practice'leri</h2>
+    <p>GPO'ların kendisi de bir saldırı yüzeyi oluşturabilir. Kötü yapılandırılmış izinler, GPO link sırası ihmalı veya SYSVOL güvenlik zafiyetleri, bir saldırganın tüm domaine politika uygulayabileceği senaryolara yol açabilir.</p>
+
+    <h3>5.1 GPO Tasarım İlkeleri</h3>
+    <ul>
+        <li><strong>Tek Sorumluluk Prensibi:</strong> Her GPO tek bir işlev yapmalı. "Her şeyi yapan" dev GPO'lar sorunların izolasyonunu zorlaştırır.</li>
+        <li><strong>İsimlendirme Standardı:</strong> <code>[Ortam]-[Tip]-[Kapsam]</code> formatını kullan. Örn: <code>PROD-SEC-Server-Baseline</code>, <code>DEV-CFG-Workstation-Software</code></li>
+        <li><strong>Linkleme Noktasını Minimize Et:</strong> GPO'yu mümkün olduğunca en alt OU'ya linkle. Domain seviyesindeki GPO'lar tüm nesneleri etkiler.</li>
+        <li><strong>Default Domain Policy'ye Dokunma:</strong> Sadece <em>Password Policy</em> ve <em>Account Lockout Policy</em> bu GPO'da tutulmalı. Başka hiçbir şey ekleme.</li>
+        <li><strong>Default Domain Controllers Policy'yi Koru:</strong> Domain Controller bazlı politikaları ayrı bir GPO ile yönet, varsayılanı değiştirme.</li>
+    </ul>
+
+    <h3>5.2 GPO Erişim Kontrolü (ACL Hardening)</h3>
+    <p>GPO üzerindeki izinler <strong>GPMC → Delegation</strong> sekmesinden yönetilir. Aşağıdaki prensipler uygulanmalıdır:</p>
+
+    <ul>
+        <li><strong>Edit yetkisini kısıtla:</strong> Tüm GPO'ları düzenleme yetkisi yalnızca <em>GPO Yönetici</em> grubuna verilmeli. Domain Admins varsayılan olarak bu yetkiye sahiptir ancak ayrı bir servis hesabı ya da güvenlik grubu oluşturulması önerilir.</li>
+        <li><strong>Link yetkisini ayır:</strong> GPO'yu <em>oluşturma</em> ile GPO'yu <em>linkleme</em> yetkilerini ayır. Birisi GPO oluşturabilir ama linkleme için ayrı onay mekanizması kurulabilir.</li>
+        <li><strong>Creator Owner'ı izle:</strong> Bir kullanıcı GPO oluşturduğunda otomatik olarak <em>Creator Owner</em> olur ve GPO üzerinde tam kontrol kazanır. Bu durum denetlenmeli ve Creator Owner kaldırılmalıdır.</li>
+    </ul>
+
+    <div class="warning">
+        <strong>⚠️ GPO Oluşturma Yetkisi:</strong> <em>Group Policy Creator Owners</em> grubuna eklenen kullanıcılar GPO oluşturabilir ve oluşturdukları GPO'lar üzerinde tam kontrol elde eder. Bu gruba ekleme yaparken çok dikkatli olunmalıdır. Genel pratik: bu grubu boş bırak, GPO oluşturma işleri Domain Admins üzerinden yürüt.
+    </div>
+
+    <h3>5.3 SYSVOL Güvenliği</h3>
+    <p>GPO politikaları SYSVOL klasöründe saklanır ve tüm domain controller'lar arasında DFSR (Distributed File System Replication) ile replike edilir. SYSVOL güvenliği kritik öneme sahiptir:</p>
+
+    <ul>
+        <li><strong>SYSVOL'de script saklama:</strong> Logon scriptleri SYSVOL'de tutuluyorsa, kimlik doğrulamalı her kullanıcı bu dosyaları okuyabilir. Hassas bilgi (parola, connection string vb.) bu scriptlere asla yazılmamalıdır.</li>
+        <li><strong>Eski .inf ve .ini dosyaları:</strong> Group Policy Preferences (GPP) üzerinden geçmişte yapılan parola konfigürasyonları SYSVOL'de <strong>geri döndürülebilir şifreleme</strong> ile saklanıyordu. Bu kritik bir zafiyet (MS14-025) ve hâlâ pek çok ortamda kalıntı dosyalar bulunabilir. <code>cpassword</code> değeri içeren GPP dosyalarını tarayın.</li>
+        <li><strong>NTFRS yerine DFSR:</strong> NTFRS (eski replikasyon mekanizması) kullanıyorsanız DFSR'ye geçiş yapın. NTFRS güvenlik güncellemesi almıyor.</li>
+    </ul>
+
+    <h3>5.4 Temel Güvenlik Politikaları (Security Baseline)</h3>
+    <p>Microsoft'un yayınladığı <strong>Security Compliance Toolkit (SCT)</strong> ile birlikte gelen baseline GPO'ları, kurumsal ortamlar için sağlam bir başlangıç noktası sunar. Temel hardenig alanları:</p>
+
+    <div class="step-grid">
+        <div class="step-item">
+            <div class="step-num">🔐</div>
+            <div class="step-body">
+                <strong>Parola & Hesap Politikaları</strong>
+                <span>Minimum 14 karakter uzunluğu, karmaşıklık zorunluluğu, 5 başarısız girişimde hesap kilitleme (30 dakika), parola geçmişi 24 parola.</span>
+            </div>
+        </div>
+        <div class="step-item">
+            <div class="step-num">🛡️</div>
+            <div class="step-body">
+                <strong>Audit Politikaları</strong>
+                <span>Logon/Logoff, Account Management, Policy Change, Privileged Use olaylarını denetle. Advanced Audit Policy Configuration mutlaka yapılandırılmalı.</span>
+            </div>
+        </div>
+        <div class="step-item">
+            <div class="step-num">🔒</div>
+            <div class="step-body">
+                <strong>User Rights Assignment</strong>
+                <span>"Log on locally" ve "Allow log on through RDP" yetkilerini kısıtla. Domain Users grubunu bu gruplardan çıkar; yalnızca belirli güvenlik grupları ekli olmalı.</span>
+            </div>
+        </div>
+        <div class="step-item">
+            <div class="step-num">⚙️</div>
+            <div class="step-body">
+                <strong>Security Options</strong>
+                <span>LAN Manager authentication level: <em>Send NTLMv2 response only, refuse LM & NTLM</em>. SMB signing zorunlu yap. Anonymous SID/Name translation'ı kapat.</span>
+            </div>
+        </div>
+        <div class="step-item">
+            <div class="step-num">🖥️</div>
+            <div class="step-body">
+                <strong>Windows Defender & Firewall</strong>
+                <span>Defender gerçek zamanlı koruma, bulut tabanlı koruma ve örnek gönderimi GPO ile merkezi olarak etkinleştirilmeli. Domain profile için gelen bağlantıları varsayılan olarak engelle.</span>
+            </div>
+        </div>
+        <div class="step-item">
+            <div class="step-num">📦</div>
+            <div class="step-body">
+                <strong>AppLocker / WDAC</strong>
+                <span>İzin verilen uygulamaları kısıtlamak için AppLocker (Windows 10/11 Enterprise) veya Windows Defender Application Control (WDAC) politikası yönet. Yönetici olmayan kullanıcıların uygulamaları çalıştırması kısıtlanabilir.</span>
+            </div>
+        </div>
+    </div>
+
+    <h3>5.5 Privileged Access Workstation (PAW) ve Tier Modeli</h3>
+    <p>Microsoft'un önerdiği <strong>Tiered Administration Model</strong>, GPO tasarımında kritik bir rol oynar. Domain Admin hesaplarının yalnızca Tier 0 sistemlere (Domain Controller, PKI sunucuları vb.) erişebileceği ve bu sistemlerde kullanılan workstation'ların (PAW) ayrı bir OU altında farklı GPO'larla yönetilmesi gerektiğini tanımlar.</p>
+
+    <table class="compare-table">
+        <tr><th>Tier</th><th>Kapsam</th><th>GPO Stratejisi</th></tr>
+        <tr>
+            <td><strong>Tier 0</strong></td>
+            <td>Domain Controllers, AD, PKI</td>
+            <td class="tag-red">En kısıtlı — ayrı OU, ayrı admin hesapları</td>
+        </tr>
+        <tr>
+            <td><strong>Tier 1</strong></td>
+            <td>Sunucular, uygulama altyapısı</td>
+            <td>Server baseline GPO — Tier 0 hesapları erişemez</td>
+        </tr>
+        <tr>
+            <td><strong>Tier 2</strong></td>
+            <td>İş istasyonları, kullanıcı cihazları</td>
+            <td class="tag-green">Workstation baseline GPO — en geniş kapsam</td>
+        </tr>
+    </table>
+
+    <h2>6. GPO Sorun Giderme ve Doğrulama</h2>
+    <p>GPO uygulandıktan sonra beklenen politikaların gerçekten uygulandığını doğrulamak için aşağıdaki araçlar kullanılır:</p>
+
+    <ul>
+        <li><strong><code>gpresult /r</code></strong> — Geçerli oturuma uygulanan GPO'ları listeler (Applied, Denied, Filtered).</li>
+        <li><strong><code>gpresult /h report.html</code></strong> — HTML formatında detaylı GPO raporu üretir. Hangi politikanın hangi GPO'dan geldiğini gösterir.</li>
+        <li><strong><code>gpupdate /force</code></strong> — GPO'yu hemen yenile (normalde 90 dakikada bir arka planda uygulanır).</li>
+        <li><strong>RSOP (Resultant Set of Policy):</strong> GPMC üzerinden <em>Group Policy Results</em> sihirbazı ile uzak bir makinedeki geçerli politika setini görüntüle.</li>
+        <li><strong>Event Log — System log:</strong> GPO işleme hataları <em>Microsoft-Windows-GroupPolicy</em> kaynağıyla event log'a düşer. Event ID <strong>1085</strong> GPO uygulanma hatasını, <strong>1500</strong> ise başarılı uygulamayı gösterir.</li>
+    </ul>
+
+    <div class="callout">
+        <strong>💡 GPMC Modeling vs Results:</strong><br>
+        <strong>Group Policy Modeling</strong> → GPO'nun uygulanıp uygulanmayacağını deploy etmeden <em>simüle</em> etmek için kullanılır. Test ortamına gerek kalmadan etki analizi yapılabilir.<br>
+        <strong>Group Policy Results</strong> → Gerçek bir makinede/kullanıcıda <em>mevcut durumu</em> raporlar. Sorun gidermede kullanılır.
+    </div>
+
+    <h2>7. GPO Backup, Restore ve Versiyon Kontrol</h2>
+    <p>GPO'lar production ortamda değiştirilmeden önce mutlaka yedeklenmeli ve değişiklikler versiyon kontrolüne alınmalıdır:</p>
+
+    <ul>
+        <li><strong>GPMC üzerinden backup:</strong> Sağ tıkla → <em>Back Up All</em> — tüm GPO'ları seçilen klasöre yedekler.</li>
+        <li><strong>PowerShell ile backup:</strong> <code>Backup-GPO -All -Path "C:\GPO-Backups\$(Get-Date -f yyyyMMdd)"</code> — Görev Zamanlayıcı ile günlük backup oluşturulabilir.</li>
+        <li><strong>AGPM (Advanced Group Policy Management):</strong> Microsoft AGPM, GPO'lar için tam kapsamlı versiyon kontrolü, onay iş akışı ve offline düzenleme desteği sunar. Büyük ortamlar için kesinlikle önerilir.</li>
+    </ul>
+
+    <div class="callout">
+        <strong>✅ Özet — Production GPO Checklist:</strong>
+        <ul style="margin-top:0.5rem;">
+            <li>GPO adlandırma konvensiyonu belirlenmiş mi?</li>
+            <li>Security Filtering doğru yapılandırılmış mı? (Authenticated Users kaldırıldıysa Domain Computers Read izni var mı?)</li>
+            <li>GPO <em>önce test OU'suna</em> linklenip doğrulandı mı?</li>
+            <li>SYSVOL'de eski GPP parola kalıntıları temizlendi mi?</li>
+            <li>Default Domain Policy sadece parola/lockout politikası içeriyor mu?</li>
+            <li>GPO değişikliklerinden önce backup alındı mı?</li>
+            <li>Privileged hesaplar Tier modeline göre ayrıştırıldı mı?</li>
+        </ul>
+    </div>
+
+    <p>Active Directory GPO yönetimi, teknik bilginin ötesinde <strong>disiplinli bir süreç yönetimi</strong> gerektirir. Doğru tasarlanmış bir GPO mimarisi; kurumsal güvenliği otomatik bir kontrol mekanizmasına dönüştürür ve saldırı yüzeyini önemli ölçüde daraltır. Olası bir saldırı ya da konfigürasyon hatası senaryosunda ise iyi yapılandırılmış GPO'lar, hasarın kontrol altında tutulmasına kritik katkı sağlar.</p>
+    
