@@ -5,8 +5,7 @@
 //    posts/<id>.js       → Her makalenin HTML içeriği
 // =============================================================
 
-// articles objesi posts/*.js tarafından doldurulur
-const articles = {};
+// articles objesi index.html'de posts scriptlerinden önce tanımlanır
 
 
 
