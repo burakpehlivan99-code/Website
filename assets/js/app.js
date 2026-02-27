@@ -56,6 +56,13 @@ const articles = {};
             );
         }
 
+        // ===== HERO MAKALE SAYACI =====
+        // allPosts.length otomatik okunur; yeni yazi eklenince guncelleme gerekmez
+        (function() {
+            const statEl = document.querySelector('.hero-stats .hero-stat:first-child h3');
+            if (statEl && typeof allPosts !== 'undefined') statEl.textContent = allPosts.length;
+        })();
+
         // Apply saved theme on load
         (function() {
             const saved = localStorage.getItem('theme') ||
@@ -177,18 +184,7 @@ const articles = {};
         });
 
         // ===== SEARCH =====
-        const posts = [
-            { title: 'Sanallaştırma Platformları: Broadcom VMware, Huawei FusionSphere & Açık Kaynak Alternatifleri', tag: 'Sanallaştırma', id: 'sanal-platform' },
-            { title: 'vCenter Server Kurulum Adımları: Sıfırdan Üretime', tag: 'VMware', id: 'vcenter-kurulum' },
-            { title: 'Omnissa Horizon VDI: Connection Server Kurulum ve Yapılandırma Rehberi', tag: 'VDI', id: 'horizon-vdi' },
-            { title: 'vCenter High Availability (HA): Best Practice Konfigürasyon Rehberi', tag: 'HA & Güvenilirlik', id: 'vcenter-ha' },
-            { title: 'VCF Ortamlarında vSphere Distributed Switch (VDS) Mimarisi ve Tasarım İlkeleri', tag: 'VCF / Ağ', id: 'vds-mimari' },
-            { title: 'vSAN Trafik Optimizasyonu için VDS Uplink ve Load Balancing Stratejileri', tag: 'vSAN / Ağ', id: 'vds-loadbalancing' },
-            { title: 'VCF SDDC Manager ile Network Pool Yönetimi ve VDS Entegrasyonu', tag: 'VCF / SDDC', id: 'sddc-network-pool' },
-            { title: 'vSAN ve vMotion Trafiği için NIOC (Network I/O Control) Yapılandırması', tag: 'vSAN / NIOC', id: 'nioc-yapilandirma' },
-            { title: 'NSX-T ile VDS 7.0/8.0 Yakınsaması: Yakınsak Sanal Switch (CVS) Yapısı', tag: 'NSX-T / VCF', id: 'nsxt-vds' },
-            { title: 'vSAN Distributed Switch Üzerinde Sorun Giderme ve Performans İzleme', tag: 'vSAN / Troubleshoot', id: 'vsan-troubleshoot' },
-        ];
+        // allPosts, data/posts.js'ten otomatik gelir — buraya elle ekleme gerekmez
 
         function openSearch() {
             const overlay = document.getElementById('searchOverlay');
@@ -209,7 +205,7 @@ const articles = {};
             const resultsEl = document.getElementById('searchResults');
             if (!q) { resultsEl.innerHTML = ''; return; }
 
-            const filtered = posts.filter(p =>
+            const filtered = allPosts.filter(p =>
                 p.title.toLowerCase().includes(q) || p.tag.toLowerCase().includes(q)
             );
 
