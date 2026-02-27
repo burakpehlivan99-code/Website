@@ -1,0 +1,179 @@
+<span class="article-tag">Linux · Ubuntu Server</span>
+<h1>Ubuntu Server Kurulum ve Kurulum Sonrası Konfigürasyon Rehberi</h1>
+<div class="article-meta-row">
+    <span>📅 13 Şubat 2026</span>
+    <span>⏱ 13 dk okuma</span>
+    <span>✍️ Burak Pehlivanoğlu</span>
+</div>
+
+<p>Ubuntu Server, kurumsal Linux altyapılarında yaygın olarak kullanılan, uzun dönem destek (LTS) sürümleriyle kararlı bir platform sunan dağıtımdır. Bu rehberde sıfırdan bir Ubuntu Server kurulumunu, disk bölümleme stratejisini ve kurulum sonrası zorunlu konfigürasyon adımlarını ele alıyoruz. Rehber hem 18.04 hem de 20.04 LTS sürümleri için geçerlidir; farklılaşan noktalarda sürüm belirtilmiştir.</p>
+
+<div class="callout">
+    <strong>ℹ️ Ön Bilgi:</strong> Kurulum sunucuya fiziksel ya da sanal ortamda ISO takılarak gerçekleştirilir. Sanal ortamda ISO, AdminWs üzerinden CD imajı olarak sunucuya verilir. Kurulum tamamlandıktan sonra geçici kullanıcı silinmeli ve SSH root erişimi yapılandırılmalıdır.
+</div>
+
+<h2>Kurulum Adımları</h2>
+
+<div class="step-grid">
+    <div class="step-item">
+        <div class="step-num">1</div>
+        <div class="step-body">
+            <strong>ISO'yu Bağlayın ve Sunucuyu Başlatın</strong>
+            <span>ISO sunucuya takılır, CD imajı AdminWs üzerinden verilir. Sunucuyu yeniden başlatmak için <kbd>CTRL+ALT+DEL</kbd> kullanın. Reset butonu CD bağlantısını koparır — kullanmayın.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">2</div>
+        <div class="step-body">
+            <strong>Dil ve Klavye Seçimi</strong>
+            <span>Dil olarak <strong>English</strong> seçin, ardından <strong>Install Ubuntu Server</strong> seçeneğine ilerleyin. Klavye düzeni: <strong>Turkish → Turkish</strong>.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">3</div>
+        <div class="step-body">
+            <strong>Ağ Konfigürasyonu</strong>
+            <span>Ağ kartı üzerinde <strong>Edit IPv4 → Manual</strong> seçin. Subnet, IP adresi ve Gateway bilgilerini girin. Subnet adresi <code>network_adresi/prefix_length</code> formatında olmalıdır; doğru hesap için IP Calculator kullanın. <strong>Backup Gateway kesinlikle girilmez.</strong> Name servers ve Search domains alanları boş bırakılır.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">4</div>
+        <div class="step-body">
+            <strong>Proxy ve Mirror Ayarları</strong>
+            <span>Proxy ekranını atlayın (<strong>Continue without network</strong>). Ubuntu Mirror adresini silmeden olduğu gibi bırakarak devam edin.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">5</div>
+        <div class="step-body">
+            <strong>Disk Yapısı — Bölümleme</strong>
+            <span>Tüm diski kullan seçeneğiyle ilgili diski seçin. Varsa <strong>partition2'yi silin</strong>; partition1'i (bios_grub) bırakın — GRUB/kernel için zorunludur. Ardından aşağıdaki bölüm planını uygulayın.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">6</div>
+        <div class="step-body">
+            <strong>/boot Bölümü</strong>
+            <span><strong>Add Partition</strong> ile 1 GB boyutunda, <strong>xfs</strong> dosya sistemi, bağlantı noktası <code>/boot</code> olarak oluşturun.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">7</div>
+        <div class="step-body">
+            <strong>LVM Volume Group Oluşturma</strong>
+            <span>Kalan alanı <strong>Leave Unformatted</strong> olarak işaretleyip üzerinden <strong>LVM Volume Group</strong> oluşturun. Volume group adını <code>vg_root</code> olarak girin.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">8</div>
+        <div class="step-body">
+            <strong>Logical Volume'lar</strong>
+            <span><code>vg_root</code> üzerinde üç LV oluşturun: <code>lv_swap</code> → 8192 MB (swap), <code>lv_home</code> → 10240 MB (<code>/home</code>), <code>lv_root</code> → kalan tüm alan (<code>/</code>). Dosya sistemi xfs önerilir.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">9</div>
+        <div class="step-body">
+            <strong>Kullanıcı ve Hostname</strong>
+            <span>Kurulum için geçici bir kullanıcı oluşturun — kurulum tamamlandıktan sonra silinecektir. Hostname alanına sunucunun <strong>tam FQDN</strong>'ini girin.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">10</div>
+        <div class="step-body">
+            <strong>OpenSSH Kurulumu ve Reboot</strong>
+            <span><strong>Install OpenSSH server</strong> mutlaka seçilmelidir. Kurulum tamamlandıktan sonra <strong>Reboot Now</strong> ile yeniden başlatın.</span>
+        </div>
+    </div>
+</div>
+
+<div class="callout warning">
+    <strong>⚠️ Disk Bölümleme Uyarısı:</strong> partition1 (bios_grub) silinirse sistem açılmaz. Yalnızca partition2'yi silin. LVM üzerinde lv_swap'a swap tipi, lv_home ve lv_root'a xfs dosya sistemi atamayı unutmayın.
+</div>
+
+<h2>Kurulum Sonrası Konfigürasyon</h2>
+
+<h3>1. Geçici Kullanıcı ile İlk Giriş ve Root Hazırlığı</h3>
+<p>Geçici kullanıcı ile sisteme giriş yapın. <code>sudo</code> ile root şifresini <code>111111</code> olarak ayarlayın, ardından geçici kullanıcıyı silin:</p>
+<div class="code-block"><pre>sudo passwd root          # şifre: 111111
+sudo userdel -r gecici_kullanici</pre></div>
+
+<h3>2. Backup Network Route Tanımları</h3>
+<p>Netplan yapılandırma dosyası Ubuntu sürümüne göre farklı konumdadır:</p>
+<ul>
+    <li><strong>18.04:</strong> <code>/etc/netplan/50-cloud-init.yaml</code></li>
+    <li><strong>20.04:</strong> <code>/etc/netplan/00-installer-config.yaml</code></li>
+</ul>
+
+<div class="callout warning">
+    <strong>⚠️ YAML Girinti Uyarısı:</strong> YAML dosyalarında girintileme sekme (tab) ile değil, boşluk karakteriyle yapılmalıdır. Tek bir yanlış boşluk ağ kartını DOWN durumuna düşürür.
+</div>
+
+<p>Backup route tanımlarını ekledikten sonra değişikliği uygulayın ve doğrulayın:</p>
+<div class="code-block"><pre>netplan apply
+ip a</pre></div>
+
+<h3>3. SSH Root Erişimi ve Firewall</h3>
+<div class="code-block"><pre>vi /etc/ssh/sshd_config
+# PermitRootLogin yes olarak ayarlayın
+
+service ssh restart
+ufw status        # aktifse:
+ufw disable</pre></div>
+
+<h3>4. KS Kullanıcı ve Grup Oluşturma</h3>
+<p>Kullanıcı ve grup bilgileri envantere göre belirlenir. Örnek yapı:</p>
+<div class="code-block"><pre>groupadd -g 420 ksgrp248
+groupadd -g 421 ksunx248
+
+useradd -m -g ksunx248 -G ksgrp248 -u 421 -c "UNIX Admin" ksunx248</pre></div>
+
+<h3>5. Sudo Yetkilendirmesi</h3>
+<p><code>/etc/sudoers</code> dosyasına KS SUDOERS bloğunu ekleyin:</p>
+<div class="code-block"><pre>vi /etc/sudoers
+
+# KS SUDOERS
+Cmnd_Alias BASH = /bin/bash
+Cmnd_Alias SU = /bin/su
+%ksgrp248 ALL= NOPASSWD: ALL, !SU, !SHELLS, !BASH
+ksunx248 ALL = NOPASSWD: ALL</pre></div>
+
+<h3>6. Paket Kurulumu ve Repo Tanımı</h3>
+<p>Sürüme göre <code>/etc/apt/sources.list</code> dosyasına uygun repo tanımı yapılır:</p>
+<ul>
+    <li><strong>18.04:</strong> KS Local Repo adresi tanımlanır</li>
+    <li><strong>20.04:</strong> Focal repo tanımları eklenir</li>
+</ul>
+<div class="code-block"><pre>apt-get update
+apt-get install autofs ksh ntp snmpd -y</pre></div>
+
+<div class="callout">
+    <strong>ℹ️ Sadece Data IP:</strong> Sunucuda yalnızca data IP tanımlıysa ve yönetim ağına erişim yoksa, paket kurulumu için SNAT talep edilmeli veya harici repo kullanılmalıdır.
+</div>
+
+<h3>7. Host Dosyası ve Timezone</h3>
+<div class="code-block"><pre>vi /etc/hosts
+# data_IP    full.fqdn.domain    kisa_hostname
+
+timedatectl set-timezone Europe/Istanbul</pre></div>
+
+<h3>8. Ek Disk Ekleme (LVM)</h3>
+<p>Yeni disk eklendiğinde LVM üzerinden bölümlendirme ve dosya sistemi oluşturma sırası:</p>
+<div class="code-block"><pre>pvcreate /dev/sdX
+vgcreate vg_data /dev/sdX
+lvcreate -L 50G -n lv_data vg_data
+mkfs.xfs /dev/vg_data/lv_data
+
+# /etc/fstab'a ekleyin:
+/dev/vg_data/lv_data  /data  xfs  defaults  0 0</pre></div>
+
+<h3>9. Kapanış Doğrulamaları</h3>
+<p>Kurulum ve konfigürasyon tamamlandıktan sonra aşağıdaki komutlarla sistemin doğruluğunu teyit edin:</p>
+<div class="code-block"><pre>hostnamectl          # hostname ve OS bilgisi
+lsblk                # disk ve bölüm yapısı
+timedatectl          # timezone ve NTP durumu
+ip a                 # ağ arayüzleri ve IP adresleri</pre></div>
+
+<div class="callout">
+    <strong>💡 Pro Tip:</strong> Kurulum tamamlandıktan sonra <code>lsblk</code> çıktısında tüm LV'lerin doğru bağlantı noktalarında göründüğünü, <code>timedatectl</code> çıktısında <code>Time zone: Europe/Istanbul</code> ve NTP servisinin aktif olduğunu mutlaka doğrulayın. Bu adımlar atlandığında genellikle production ortamda ciddi sorunlara yol açar.
+</div>

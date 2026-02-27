@@ -1,0 +1,309 @@
+<span class="article-tag">Sanallaştırma · Hypervisor</span>
+<h1>Sanallaştırma Teknolojileri: VMware, Hyper-V, XenServer ve Alternatiflerin Kapsamlı Karşılaştırması</h1>
+<div class="article-meta-row">
+    <span>📅 25 Şubat 2026</span>
+    <span>⏱ 12 dk okuma</span>
+    <span>✍️ Burak Pehlivanoğlu</span>
+</div>
+
+<p>Sanallaştırma teknolojisi, modern BT altyapısının temel taşlarından biri haline gelmiştir. Fiziksel sunucu kaynaklarının (CPU, RAM, depolama, ağ) yazılım katmanı aracılığıyla birden fazla izole ortama bölünerek paylaşılması esasına dayanan bu yaklaşım; hem maliyet tasarrufu hem de operasyonel esneklik açısından kurumsal ortamlarda vazgeçilmez bir konuma ulaşmıştır. Bulut bilişimin temeli de özünde sanallaştırma teknolojisi üzerine inşa edilmiştir.</p>
+
+<p>Bu makalede sanallaştırmanın temel kavramlarını ele aldıktan sonra kurumsal pazarda öne çıkan VMware vSphere, Microsoft Hyper-V ve Citrix XenServer çözümlerini teknik açıdan karşılaştırıyor; ardından Oracle VirtualBox ve Parallels Workstation gibi alternatif platformlara göz atıyoruz.</p>
+
+<h2>1. Sanallaştırma Nedir ve Neden Önemlidir?</h2>
+<p>Geleneksel BT ortamlarında her uygulama, kendi fiziksel sunucusunda çalışır. Bu yaklaşım; düşük kaynak kullanım oranları (genellikle %10–15), yüksek donanım maliyeti ve yönetim karmaşıklığı gibi ciddi sorunlara yol açar. Sanallaştırma, bir <strong>hypervisor</strong> (sanal makine monitörü) yazılımı aracılığıyla tek bir fiziksel sunucuyu birden fazla izole sanal makineye (VM) bölmeyi mümkün kılar.</p>
+
+<div class="info-grid">
+    <div class="info-item">
+        <span class="info-label">Kaynak Kullanımı</span>
+        <span class="info-value">Fiziksel sunucuların ortalama %10–15'lik kullanım oranı sanallaştırma ile %60–80 seviyesine çıkabilir</span>
+    </div>
+    <div class="info-item">
+        <span class="info-label">İzolasyon</span>
+        <span class="info-value">Her VM tamamen izole bir ortamda çalışır; bir VM'de yaşanan hata diğerlerini etkilemez</span>
+    </div>
+    <div class="info-item">
+        <span class="info-label">Yedekleme</span>
+        <span class="info-value">VM'ler anlık görüntü (snapshot) alınarak saniyeler içinde yedeği alınabilir ve geri yüklenebilir</span>
+    </div>
+    <div class="info-item">
+        <span class="info-label">Taşınabilirlik</span>
+        <span class="info-value">Sanal makineler, fiziksel donanımdan bağımsız olarak farklı host'lara veya veri merkezlerine taşınabilir</span>
+    </div>
+</div>
+
+<div class="callout">
+    <strong>💡 Hypervisor Türleri:</strong> Sanallaştırma platformları iki temel kategoriye ayrılır. <strong>Type-1 (Bare-metal) Hypervisor</strong>, fiziksel donanım üzerine doğrudan kurulur ve işletim sistemine ihtiyaç duymaz (ESXi, Hyper-V, XenServer). <strong>Type-2 (Hosted) Hypervisor</strong>, mevcut bir işletim sistemi üzerine uygulama olarak kurulur (VirtualBox, Parallels). Kurumsal ortamlarda performans ve güvenlik nedeniyle Type-1 çözümler tercih edilir.
+</div>
+
+<h2>2. Sanallaştırmanın Kurumsal Faydaları</h2>
+<ul>
+    <li><strong>Maliyet Azaltma:</strong> Daha az fiziksel sunucu demek, daha az elektrik, soğutma ve veri merkezi alanı maliyeti anlamına gelir. Kurumsal ortamlarda tipik olarak %40–60 donanım maliyeti tasarrufu sağlanır.</li>
+    <li><strong>İş Sürekliliği:</strong> Yüksek erişilebilirlik (HA) ve hata toleransı (FT) özellikleri sayesinde donanım arızaları iş sürekliliğini tehdit etmez; VM'ler otomatik olarak sağlıklı bir host'a taşınır.</li>
+    <li><strong>Hızlı Provizyon:</strong> Yeni bir fiziksel sunucu siparişi haftalar alırken, yeni bir VM dakikalar içinde oluşturulabilir ve hazır hale getirilebilir.</li>
+    <li><strong>Test ve Geliştirme Ortamları:</strong> Üretim ortamının bire bir kopyasını dakikalar içinde oluşturmak, yazılım geliştirme ve test süreçlerini radikal biçimde hızlandırır.</li>
+    <li><strong>Felaket Kurtarma:</strong> VM replikasyonu ve site recovery çözümleri sayesinde felaket kurtarma planları çok daha etkin biçimde hayata geçirilebilir.</li>
+    <li><strong>Bulut Geçişine Zemin:</strong> Sanallaştırılmış iş yükleri, AWS, Azure veya GCP gibi bulut platformlarına çok daha kolaylıkla migrate edilebilir.</li>
+</ul>
+
+<h2>3. VMware vSphere</h2>
+<p>VMware vSphere, onlarca yıllık olgunluğu ve kurumsal güvenirliliğiyle sanallaştırma pazarının tartışmasız lideriydi. ESXi hypervisor'ı ve vCenter Server yönetim platformu üzerine inşa edilen vSphere ekosistemi; yüksek erişilebilirlik, otomatik yük dengeleme ve gelişmiş depolama yönetimi gibi kurumsal özellikleriyle öne çıkar. Ancak 2023 yılında Broadcom'un VMware'i satın almasıyla birlikte gelen radikal lisans değişiklikleri, pek çok kurumu alternatif arayışına yöneltmiştir.</p>
+
+<h3>3.1 vSphere Temel Bileşenleri</h3>
+<ul>
+    <li><strong>ESXi (vSphere Hypervisor):</strong> Type-1 bare-metal hypervisor. Fiziksel sunucu üzerine doğrudan kurulur, minimal footprint ile maksimum kaynak verimliliği sağlar.</li>
+    <li><strong>vCenter Server Appliance (VCSA):</strong> Tüm ESXi host'larını, VM'leri, depolama ve ağ kaynaklarını merkezi olarak yöneten yönetim platformu.</li>
+    <li><strong>vSAN:</strong> ESXi host'larının yerel disklerini birleştirerek yazılım tanımlı paylaşımlı depolama (HCI) oluşturan çözüm.</li>
+    <li><strong>NSX:</strong> Yazılım tanımlı ağ ve mikro-segmentasyon platformu.</li>
+    <li><strong>DRS (Distributed Resource Scheduler):</strong> Cluster genelinde CPU ve RAM yükünü otomatik dengeler; gerektiğinde VM'leri canlı olarak taşır (vMotion).</li>
+    <li><strong>HA (High Availability):</strong> Host arızası durumunda VM'leri otomatik olarak sağlıklı host'larda yeniden başlatır.</li>
+    <li><strong>FT (Fault Tolerance):</strong> Kritik VM'ler için tam hata toleransı — sıfır kesinti ile failover.</li>
+</ul>
+
+<div class="callout">
+    <strong>💡 vMotion Nedir?</strong> vMotion, çalışan bir sanal makineyi <strong>hiç kesinti yaşatmadan</strong> bir ESXi host'undan diğerine canlı olarak taşıma özelliğidir. Donanım bakımı, kaynak dengeleme veya güç tasarrufu amacıyla kullanılır. Storage vMotion ise VM disk dosyalarını farklı bir datastore'a kesintisiz taşır.
+</div>
+
+<h3>3.2 VMware Horizon: Masaüstü Sanallaştırma</h3>
+<p>VMware Horizon, fiziksel iş istasyonları yerine merkezi veri merkezinde barındırılan sanal masaüstleri (VDI) sunar. Kullanıcılar ince istemci, dizüstü bilgisayar veya mobil cihazlardan kurumsal masaüstü ortamına erişebilir. Pandemi sonrası yaygınlaşan uzaktan çalışma modelleri ile birlikte VDI çözümlerine olan talep önemli ölçüde artmıştır.</p>
+
+<ul>
+    <li><strong>Instant Clone:</strong> Bir altın görüntüden (golden image) saniyeler içinde yüzlerce masaüstü oluşturma</li>
+    <li><strong>App Volumes:</strong> Uygulamaları sanal masaüstünden bağımsız katmanlar olarak yönetme</li>
+    <li><strong>Dynamic Environment Manager:</strong> Kullanıcı profili ve ortam kişiselleştirme yönetimi</li>
+    <li><strong>Blast Extreme Protokolü:</strong> Düşük bant genişliğinde yüksek performanslı uzak masaüstü deneyimi</li>
+</ul>
+
+<h3>3.3 VMware NSX: Ağ Sanallaştırma</h3>
+<p>VMware NSX, fiziksel ağ donanımından bağımsız yazılım tanımlı ağ altyapısı sunar. Sanal switch, router, firewall ve yük dengeleme işlevleri tamamen yazılım katmanında gerçekleştirilir. Mikro-segmentasyon özelliği sayesinde aynı host üzerindeki VM'ler arasındaki trafik bile güvenlik politikalarıyla denetlenebilir.</p>
+
+<h3>3.4 VMware vCloud Suite</h3>
+<p>vCloud Suite; vSphere, vSAN, NSX ve Aria (eski adıyla vRealize) ürünlerini bir araya getiren kapsamlı bir bulut yönetim paketidir. Özel (private), genel (public) ve hibrit bulut ortamlarını tek bir platform üzerinden yönetmeyi hedefler. Aria Operations ile detaylı performans izleme, Aria Automation ile self-servis kaynak provizyon mümkün olur.</p>
+
+<div class="callout warning">
+    <strong>⚠️ Broadcom Lisans Değişikliği:</strong> 2024 itibarıyla VMware'in tüm perpetual (kalıcı) lisansları kaldırılmış, ürünler zorunlu abonelik modellerine geçirilmiştir. VMware Cloud Foundation (VCF) veya vSphere Foundation paketleri minimum 72 core üzerinden faturalandırılmaktadır. Bu değişiklik özellikle küçük ve orta ölçekli işletmeler için ciddi maliyet artışlarına yol açmıştır.
+</div>
+
+<h2>4. Microsoft Hyper-V</h2>
+<p>Microsoft Hyper-V, Windows Server ile birlikte gelen ve ek lisans maliyeti gerektirmeyen bir Type-1 hypervisor çözümüdür. Windows Server 2008 R2 ile kurumsal olgunluğa ulaşan Hyper-V, özellikle Microsoft merkezli altyapılarda (Active Directory, Exchange, SQL Server) güçlü bir sanallaştırma seçeneği sunar.</p>
+
+<h3>4.1 Hyper-V Temel Özellikleri</h3>
+<ul>
+    <li><strong>Windows Server ile Entegrasyon:</strong> Windows Server lisansına dahildir; Windows Server Datacenter Edition ile aynı fiziksel host üzerinde sınırsız Windows VM çalıştırılabilir.</li>
+    <li><strong>Azure Entegrasyonu:</strong> Azure Site Recovery ile hibrit felaket kurtarma, Azure Migrate ile bulut geçişi ve Azure Arc ile hibrit yönetim senaryolarında doğal entegrasyon sağlar.</li>
+    <li><strong>Live Migration:</strong> VMware'in vMotion'ına karşılık gelen live migration özelliği ile çalışan VM'ler host'lar arasında kesintisiz taşınabilir.</li>
+    <li><strong>Hyper-V Replica:</strong> VM'leri başka bir Hyper-V host'una asenkron olarak replike ederek düşük maliyetli felaket kurtarma sağlar.</li>
+    <li><strong>Shielded VM:</strong> BitLocker şifreleme ve TPM entegrasyonu ile VM disk dosyalarını yetkisiz erişime karşı korur.</li>
+    <li><strong>Storage Spaces Direct (S2D):</strong> Windows Server içinde yerleşik gelen yazılım tanımlı depolama; VMware vSAN'a benzer bir HCI çözümü sunar.</li>
+</ul>
+
+<div class="info-grid">
+    <div class="info-item">
+        <span class="info-label">Lisans Modeli</span>
+        <span class="info-value">Windows Server lisansına dahil; ayrı hypervisor lisansı gerekmez</span>
+    </div>
+    <div class="info-item">
+        <span class="info-label">Yönetim Araçları</span>
+        <span class="info-value">Hyper-V Manager, Windows Admin Center, System Center VMM, PowerShell</span>
+    </div>
+    <div class="info-item">
+        <span class="info-label">Azure Uyumu</span>
+        <span class="info-value">Azure ile yerel entegrasyon; Site Recovery, Migrate, Arc desteği</span>
+    </div>
+    <div class="info-item">
+        <span class="info-label">Linux Desteği</span>
+        <span class="info-value">Linux Integration Services (LIS) ile kapsamlı Linux VM desteği</span>
+    </div>
+</div>
+
+<h3>4.2 System Center Virtual Machine Manager (SCVMM)</h3>
+<p>SCVMM, birden fazla Hyper-V host'unu ve cluster'ı merkezi olarak yönetmek için kullanılan Microsoft'un kurumsal yönetim çözümüdür. vCenter'a benzer bir rol üstlenen SCVMM; VM şablonları, ağ profilleri ve depolama yönetimi işlevleri sunar. Ancak vCenter'ın sahip olduğu otomasyon ve üçüncü taraf entegrasyon zenginliğine henüz ulaşamamıştır.</p>
+
+<div class="callout">
+    <strong>💡 Ne Zaman Hyper-V Tercih Edilmeli?</strong> Altyapınız ağırlıklı olarak Microsoft teknolojileri üzerine kuruluysa ve Azure ile hibrit bulut entegrasyonu planınızdaysa, Hyper-V son derece ekonomik ve pratik bir seçenektir. Active Directory, Exchange Server veya SQL Server ağırlıklı ortamlarda Hyper-V ile mükemmel entegrasyon sağlanır. Ancak büyük ölçekli VMware altyapısına özgü gelişmiş özellikler (DRS, vSAN, NSX düzeyi) gerekiyorsa, Hyper-V bazı alanlarda yetersiz kalabilir.
+</div>
+
+<h2>5. Citrix XenServer (XCP-ng)</h2>
+<p>Citrix XenServer, açık kaynak Xen hypervisor üzerine inşa edilmiş kurumsal bir sanallaştırma platformudur. 2018 yılında Citrix, XenServer Community Edition'ı açık kaynak olarak yayımladı; bu topluluk versiyonu günümüzde <strong>XCP-ng</strong> (Xen Cloud Platform - Next Generation) adıyla aktif olarak geliştirilmeye devam etmektedir.</p>
+
+<h3>5.1 XenServer Temel Özellikleri</h3>
+<ul>
+    <li><strong>Xen Hypervisor:</strong> Linux Foundation bünyesinde geliştirilen Xen, hem paravirtualization (PV) hem de tam donanım sanallaştırma (HVM) modlarını destekler. Type-1 mimarisi ile minimal güvenlik yüzeyi sunar.</li>
+    <li><strong>XenMotion:</strong> VMware vMotion'ına karşılık gelen canlı VM taşıma özelliği.</li>
+    <li><strong>XenCenter / XCP-ng Center:</strong> Windows tabanlı merkezi yönetim konsolu.</li>
+    <li><strong>Xen Orchestra (XO):</strong> XCP-ng'nin web tabanlı modern yönetim platformu; REST API, yedekleme ve replikasyon özellikleri sunar.</li>
+    <li><strong>XenDesktop / XenApp Entegrasyonu:</strong> Citrix'in VDI ve uygulama sanallaştırma çözümleriyle yerel entegrasyon.</li>
+    <li><strong>StorageLink:</strong> NetApp, EMC gibi kurumsal depolama sistemleriyle doğrudan entegrasyon.</li>
+</ul>
+
+<div class="callout">
+    <strong>💡 XCP-ng: Özgür XenServer Alternatifi</strong> Citrix'in ticari kısıtlamalarından kaçınmak isteyen kurumlar için XCP-ng, tamamen açık kaynak ve ücretsiz bir alternatif sunar. Ticari destek almak isteyenler için ise Vates şirketi XCP-ng ve Xen Orchestra için ücretli destek abonelikleri sunmaktadır. VMware'den geçiş senaryolarında XCP-ng giderek daha popüler bir tercih haline gelmektedir.
+</div>
+
+<h2>6. Oracle VM VirtualBox</h2>
+<p>VirtualBox, Oracle tarafından geliştirilen ücretsiz ve açık kaynak bir Type-2 hypervisor'dır. Bireysel kullanıcılar ve yazılım geliştiriciler arasında son derece yaygın olan VirtualBox; Windows, Linux ve macOS üzerinde çalışır ve farklı işletim sistemlerini sanal ortamda test etmek için ideal bir araçtır.</p>
+
+<ul>
+    <li><strong>Hedef Kitle:</strong> Bireysel kullanıcılar, yazılım geliştiriciler, test ve laboratuvar ortamları</li>
+    <li><strong>Desteklenen Misafir OS:</strong> Windows, Linux, macOS (sınırlı), FreeBSD, Solaris ve daha fazlası</li>
+    <li><strong>Snapshot Desteği:</strong> Anlık görüntü alma ve zaman çizelgesi üzerinden geri yükleme</li>
+    <li><strong>Paylaşımlı Klasörler:</strong> Host ve misafir OS arasında kolay dosya paylaşımı</li>
+    <li><strong>Vagrant Entegrasyonu:</strong> HashiCorp Vagrant ile geliştirme ortamı otomasyonu için standart backend</li>
+</ul>
+
+<div class="callout warning">
+    <strong>⚠️ Üretim Ortamı Uyarısı:</strong> VirtualBox, test ve geliştirme ortamları için mükemmel bir seçenek olsa da kurumsal üretim (production) iş yükleri için tasarlanmamıştır. Yüksek erişilebilirlik, vMotion benzeri canlı taşıma veya kurumsal depolama entegrasyonu gibi özellikler bulunmamaktadır. Üretim ortamı için Type-1 hypervisor çözümleri tercih edilmelidir.
+</div>
+
+<h2>7. Parallels Workstation</h2>
+<p>Parallels Workstation, Windows ve Linux platformlarında çalışan bir Type-2 hypervisor çözümüdür. Özellikle yazılım geliştiriciler için tasarlanan Parallels; farklı işletim sistemlerini aynı anda çalıştırmak, çapraz platform geliştirme yapmak ve legacy uygulamaları test etmek amacıyla kullanılır.</p>
+
+<ul>
+    <li><strong>Platform Desteği:</strong> Windows, Linux host desteği; misafir olarak Windows, Linux, macOS sanal makineleri</li>
+    <li><strong>Geliştirici Araçları:</strong> Visual Studio, Eclipse gibi IDE'lerle entegrasyon; Docker ile konteyner desteği</li>
+    <li><strong>Snapshot ve Clone:</strong> Hızlı anlık görüntü alma ve sanal makine kopyalama</li>
+    <li><strong>Kaynak Paylaşımı:</strong> Host kaynakları ile dinamik olarak paylaşılan CPU ve RAM</li>
+</ul>
+
+<h2>8. Platform Karşılaştırma Tablosu</h2>
+
+<table class="compare-table">
+    <tr>
+        <th>Özellik</th>
+        <th>VMware vSphere</th>
+        <th>Hyper-V</th>
+        <th>XenServer / XCP-ng</th>
+        <th>VirtualBox</th>
+    </tr>
+    <tr>
+        <td>Hypervisor Tipi</td>
+        <td>Type-1 (ESXi)</td>
+        <td>Type-1</td>
+        <td>Type-1 (Xen)</td>
+        <td>Type-2</td>
+    </tr>
+    <tr>
+        <td>Lisans Modeli</td>
+        <td class="tag-red">Zorunlu Abonelik</td>
+        <td class="tag-green">Windows Server ile dahil</td>
+        <td class="tag-green">Açık Kaynak / Ticari</td>
+        <td class="tag-green">Ücretsiz (GPL)</td>
+    </tr>
+    <tr>
+        <td>Canlı Taşıma</td>
+        <td class="tag-green">vMotion</td>
+        <td class="tag-green">Live Migration</td>
+        <td class="tag-green">XenMotion</td>
+        <td class="tag-red">Yok</td>
+    </tr>
+    <tr>
+        <td>Yüksek Erişilebilirlik</td>
+        <td class="tag-green">Gelişmiş (HA + FT)</td>
+        <td class="tag-green">İyi</td>
+        <td class="tag-yellow">Temel</td>
+        <td class="tag-red">Yok</td>
+    </tr>
+    <tr>
+        <td>Merkezi Yönetim</td>
+        <td class="tag-green">vCenter</td>
+        <td class="tag-yellow">SCVMM / WAC</td>
+        <td class="tag-green">Xen Orchestra</td>
+        <td class="tag-red">Yok</td>
+    </tr>
+    <tr>
+        <td>Bulut Entegrasyonu</td>
+        <td class="tag-yellow">VMware Cloud</td>
+        <td class="tag-green">Azure (Native)</td>
+        <td class="tag-yellow">Sınırlı</td>
+        <td class="tag-red">Yok</td>
+    </tr>
+    <tr>
+        <td>Topluluk / Ekosistem</td>
+        <td class="tag-green">Çok Geniş</td>
+        <td class="tag-green">Geniş</td>
+        <td class="tag-yellow">Orta</td>
+        <td class="tag-green">Geniş</td>
+    </tr>
+    <tr>
+        <td>Üretim Ortamı Uygunluğu</td>
+        <td class="tag-green">Kurumsal</td>
+        <td class="tag-green">Kurumsal</td>
+        <td class="tag-green">Kurumsal</td>
+        <td class="tag-red">Test/Geliştirme</td>
+    </tr>
+</table>
+
+<h2>9. Sanallaştırma Mimarisi: Kritik Tasarım Kararları</h2>
+<p>Bir sanallaştırma altyapısı tasarlarken yalnızca hypervisor seçimi yetmez. Aşağıdaki mimari kararlar, uzun vadeli başarı açısından belirleyicidir:</p>
+
+<div class="step-grid">
+    <div class="step-item">
+        <div class="step-num">1</div>
+        <div class="step-body">
+            <strong>CPU ve RAM Overcommit Oranını Belirle</strong>
+            <span>Sanallaştırma ortamlarında fiziksel CPU çekirdek sayısının üzerinde sanal CPU (vCPU) atanabilir. Genel kural: CPU overcommit 4:1'i, RAM overcommit ise 1.2:1'i aşmamalıdır. Yoğun veritabanı iş yükleri için overcommit oranları minimize edilmelidir.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">2</div>
+        <div class="step-body">
+            <strong>Depolama Mimarisi: SAN, NAS veya HCI</strong>
+            <span>Paylaşımlı depolama (SAN/NAS) veya hiper-yakınsak altyapı (HCI) arasında seçim yapılmalıdır. HCI çözümleri (vSAN, S2D, Nutanix) kurulum ve yönetimi basitleştirirken, geleneksel SAN daha esnek ve test edilmiş bir seçenek sunar.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">3</div>
+        <div class="step-body">
+            <strong>Ağ Tasarımı: Management, vMotion ve VM Trafiğini Ayır</strong>
+            <span>Management ağı, vMotion ağı ve VM trafiği ayrı VLAN ve ayrı uplink'ler üzerinde tutulmalıdır. vMotion için ayrılmış düşük gecikmeli ağ, taşıma sürelerini önemli ölçüde kısaltır.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">4</div>
+        <div class="step-body">
+            <strong>Cluster Boyutu ve N+1 Kapasitesi</strong>
+            <span>Yüksek erişilebilirlik için cluster, bir host arızasında kalan host'ların mevcut iş yükünü taşıyabilecek kapasitede (N+1) tasarlanmalıdır. Tek host arızası senaryosu için en az 3 host, çift arıza senaryosu için en az 4 host önerilir.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">5</div>
+        <div class="step-body">
+            <strong>Yedekleme Stratejisi</strong>
+            <span>Image-tabanlı VM yedekleme (Veeam, Zerto, Nakivo veya platform yerel araçları) zorunludur. 3-2-1 kuralı: 3 kopya, 2 farklı medya, 1 off-site lokasyon. Snapshot, yedeklemenin yerini tutmaz.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">6</div>
+        <div class="step-body">
+            <strong>İzleme ve Kapasite Planlama</strong>
+            <span>CPU hazır kuyruğu (CPU ready), bellek ballooning ve disk gecikmesi gibi sanallaştırma spesifik metrikler düzenli olarak izlenmelidir. Kapasite planlama araçları, altyapı büyütme kararlarını veri odaklı olarak almanızı sağlar.</span>
+        </div>
+    </div>
+</div>
+
+<h2>10. Hangi Platform Ne Zaman Tercih Edilmeli?</h2>
+
+<div class="callout">
+    <strong>💡 VMware vSphere / VCF</strong><br>
+    Büyük ölçekli kurumsal ortamlar, yüksek ölçekte otomasyon gereksinimi, geniş üçüncü taraf ekosistem entegrasyonu ve uzman VMware yönetici kadrosuna sahip kuruluşlar için hâlâ en olgunlaşmış seçenektir. Ancak yeni Broadcom lisans modeli kapsamlı bir maliyet analizi gerektirmektedir.
+</div>
+
+<div class="callout">
+    <strong>💡 Microsoft Hyper-V</strong><br>
+    Microsoft teknoloji yığınına (Active Directory, SQL Server, Exchange) dayanan ve Azure ile hibrit bulut entegrasyonu planlayan kurumlar için en ekonomik ve en doğal seçenektir. Windows Server Datacenter lisansı zaten sınırsız Windows VM çalıştırma hakkı tanımaktadır.
+</div>
+
+<div class="callout">
+    <strong>💡 XenServer / XCP-ng</strong><br>
+    Lisans maliyetlerini minimize etmek isteyen, açık kaynak teknolojilere yatırım yapan ve Citrix VDI çözümleriyle entegrasyon planlayan kuruluşlar için güçlü bir alternatiftir. VMware'den geçiş senaryolarında artan bir popülariteye sahiptir.
+</div>
+
+<div class="callout">
+    <strong>💡 VirtualBox / Parallels Workstation</strong><br>
+    Bireysel geliştiriciler, test mühendisleri ve laboratuvar ortamları için idealdir. Üretim iş yükleri için kesinlikle önerilmez. Sanallaştırmanın temel kavramlarını öğrenmek için de mükemmel bir başlangıç noktasıdır.
+</div>
+
+<h2>Sonuç</h2>
+<p>Sanallaştırma teknolojisi artık bir lüks değil, modern BT altyapısının vazgeçilmez bir bileşenidir. Platform seçiminde tek doğru cevap yoktur; kurumun mevcut teknoloji yığını, bütçe kısıtları, teknik kapasite ve gelecek planları birlikte değerlendirilmelidir.</p>
+
+<p>Broadcom'un VMware lisans politikası değişikliklerinin yarattığı baskı, pek çok kurumun sanallaştırma stratejisini yeniden değerlendirmesine neden olmuştur. Bu dönüşüm, Hyper-V ve XCP-ng gibi alternatiflerin daha geniş kitlelere ulaşması açısından olumlu bir rekabet ortamı yaratmıştır. Hangi platformu seçerseniz seçin; yüksek erişilebilirlik, güçlü yedekleme ve düzenli kapasite planlama ilkeleri her zaman geçerliliğini korur.</p>

@@ -1,0 +1,115 @@
+<span class="article-tag">VMware · Backup</span>
+                <h1>Symantec NetBackup ile VMware VM Restore: Adım Adım Rehber</h1>
+                <div class="article-meta-row">
+                    <span>📅 9 Şubat 2026</span>
+                    <span>⏱ 9 dk okuma</span>
+                    <span>✍️ Burak Pehlivanoğlu</span>
+                </div>
+
+                <p>Veritas (eski adıyla Symantec) NetBackup, kurumsal ortamlarda en yaygın kullanılan yedekleme çözümlerinden biridir. VMware vSphere entegrasyonu sayesinde sanal makinelerin image tabanlı yedeğini alabilir ve farklı konumlara restore edebilirsiniz. Bu yazıda NetBackup 7.7.3 kullanarak bir VMware sanal makinesini adım adım nasıl geri yükleyeceğinizi ele alıyoruz.</p>
+
+                <h2>NetBackup Nedir?</h2>
+                <p>NetBackup, Veritas tarafından geliştirilen ve büyük ölçekli kurumsal ortamlara yönelik bir veri yedekleme ve kurtarma platformudur. Fiziksel sunucular, sanal makineler, veritabanları ve bulut ortamlarını tek bir yönetim noktasından yedekleme imkânı sunar. VMware vSphere ile entegrasyonu, sanal makinelerin uygulama tutarlı snapshot'larını alarak merkezi bir medya sunucusuna yazılmasını sağlar; böylece konuk işletim sistemine herhangi bir ajan kurma gereksinimi ortadan kalkar.</p>
+
+                <h2>Transport Mode Seçenekleri</h2>
+                <p>NetBackup, VMware sanal disklerini farklı yollarla transfer edebilir. Ortamınıza uygun transport mode'u seçmek hem restore hızını hem de ağ yükünü doğrudan etkiler:</p>
+                <ul>
+                    <li><strong>nbd (Network Block Device):</strong> Veri, ESXi yönetim ağı üzerinden TCP/IP ile taşınır. Kurulumu en kolay yöntemdir; SAN bağlantısı gerektirmez ancak ağ bant genişliğini kullanır.</li>
+                    <li><strong>nbdssl:</strong> nbd ile aynı mekanizma, ancak veriler TLS ile şifrelenir. Güvenlik gereksinimleri olan ortamlarda tercih edilir.</li>
+                    <li><strong>SAN:</strong> Veriler Fibre Channel veya iSCSI üzerinden doğrudan depolama katmanından okunur. En yüksek performansı sağlar fakat SAN altyapısı gerektirir.</li>
+                    <li><strong>HotAdd:</strong> NetBackup proxy sanal makinesi, yedeklenecek VM ile aynı datastore'a erişebiliyorsa sanal disk olarak eklenerek okuma yapar. Karma ortamlarda iyi bir orta yol seçeneğidir.</li>
+                </ul>
+
+                <div class="callout">
+                    <strong>ℹ️ Not:</strong> NetBackup otomatik olarak en uygun transport mode'u deneyebilir; ancak restore senaryolarında <strong>nbd</strong> tercih etmek, bağımlılıkları en aza indirir ve öngörülemeyen SAN/HotAdd sorunlarını engeller.
+                </div>
+
+                <h2>Alternate Location ile Original Location Restore Farkı</h2>
+                <p>NetBackup, VMware VM'lerini iki temel hedef türüne geri yükleyebilir:</p>
+                <ul>
+                    <li><strong>Original Location:</strong> VM, yedeklendiği ESXi host, datastore ve ağ portgrubu ile aynı konuma döndürülür. Varsa mevcut VM üzerine yazılır. Veri kaybı riski taşıdığından dikkatli kullanılmalıdır.</li>
+                    <li><strong>Alternate Location:</strong> VM farklı bir ESXi cluster'ına, datastore'a veya isimle döndürülür. Orijinal VM dokunulmadan ayakta kalırken test veya üretim ortamına paralel restore mümkün olur. Bu rehberde bu yöntem kullanılmaktadır.</li>
+                </ul>
+
+                <div class="callout warning">
+                    <strong>⚠️ Dikkat:</strong> Original Location seçeneği mevcut VM'in üzerine yazar. Kasıtsız veri kaybını önlemek için Alternate Location tercih edin ve restore sonrası doğrulama yapın.
+                </div>
+
+                <h2>Restore Adımları</h2>
+                <div class="step-grid">
+                    <div class="step-item">
+                        <div class="step-num">1</div>
+                        <div class="step-body">
+                            <strong>NetBackup Administrator Console'a Giriş ve Policy Type Değişikliği</strong>
+                            <span>NetBackup Administrator Console'u açın. Sol menüden <strong>Backup, Archive and Restore</strong> sekmesini seçin. Araç çubuğundaki <strong>Policy Type değiştirme</strong> butonuna tıklayın.</span>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">2</div>
+                        <div class="step-body">
+                            <strong>Makine ve Policy Type Tanımlama</strong>
+                            <span><em>Specify NetBackup Machines and Policy Type</em> penceresinde <strong>Policy type for restores</strong> alanını <code>VMware</code> olarak ayarlayın. <strong>Source client for restores</strong> alanında restore edilecek kaynak sunucuyu seçin. Farklı bir sunucuya restore yapılacaksa <strong>Destination client</strong> alanını değiştirin.</span>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">3</div>
+                        <div class="step-body">
+                            <strong>Yedekleme Seçimi</strong>
+                            <span>Restore type olarak <strong>Virtual Machine Backups</strong> seçin. <strong>End date</strong> kutusundan tarih aralığını belirleyerek istenen yedeklemeyi listede bulun. Yedek seçildiğinde sunucudaki diskler görünür hale gelir; restore edilecek diskleri işaretleyip <strong>Restore</strong> butonuna tıklayın.</span>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">4</div>
+                        <div class="step-body">
+                            <strong>Recovery Destination Belirleme</strong>
+                            <span><em>Virtual Machine Recovery</em> penceresinde <strong>Recovery destination</strong> alanını <code>Alternate Location</code> olarak seçin ve <strong>Next</strong> ile devam edin.</span>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">5</div>
+                        <div class="step-body">
+                            <strong>Recovery Options Yapılandırması</strong>
+                            <span><strong>Transport modes</strong> olarak <code>nbd</code> seçin. <strong>Datastore</strong> alanında <strong>Change</strong> butonuna tıklayarak hedef datastore'u aratın (datastore tahsisi için önceden bulut bilişim veya ilgili ekipten talep alınmalıdır). <strong>Display Name</strong> kısmındaki sunucu adını değiştirerek orijinal VM ile çakışmayı önleyin; örneğin <code>sunucu_RESTORE</code> gibi bir ek kullanın. Restore hızını artırmak için düşük yük altındaki bir <strong>Media Server</strong> seçin; bu konuda veri yedekleme uzmanına danışın.</span>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">6</div>
+                        <div class="step-body">
+                            <strong>Provisioning Ayarları</strong>
+                            <span><strong>Original Provisioning</strong> seçeneğini işaretleyin. <strong>Remove Network Interfaces</strong> seçeneğini KESİNLİKLE işaretlemeyin; aksi hâlde restore edilen VM ağa bağlanamaz.</span>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">7</div>
+                        <div class="step-body">
+                            <strong>Disk Hedeflerini Doğrulama</strong>
+                            <span>Her diskin hangi datastore'a yazılacağını gösteren özet ekranını inceleyin. Hatalı bir datastore seçimi fark ederseniz <strong>Back</strong> ile dönerek düzeltin.</span>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">8</div>
+                        <div class="step-body">
+                            <strong>Pre-Recovery Check ve Restore Başlatma</strong>
+                            <span><strong>Run Pre-Recovery Check</strong> butonuna tıklayın. NetBackup; ESXi bağlantısı, datastore erişimi ve kaynak uyumluluğunu otomatik test eder. Tüm testler yeşil geçtikten sonra son kontrol ekranında <strong>Start Recovery</strong> butonuna basın.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="callout warning">
+                    <strong>⚠️ Kritik Hatırlatma:</strong> Adım 6'da <strong>Remove Network Interfaces seçeneğini seçmeyin.</strong> Bu seçenek işaretlendiğinde restore edilen VM'in ağ adaptörü kaldırılır ve sunucu ağa erişemez hâle gelir.
+                </div>
+
+                <h2>Pre-Recovery Check Neden Önemlidir?</h2>
+                <p>Pre-Recovery Check, restore işlemini başlatmadan önce NetBackup'ın hedef ortamı otomatik olarak doğruladığı bir kontrol aşamasıdır. Bu test sayesinde ESXi host erişilebilirliği, hedef datastore'da yeterli alan, network port group geçerliliği ve medya sunucusu ile vCenter bağlantısı gibi kritik gereksinimler önceden doğrulanır. Testler başarıyla geçilmeden restore başlatılmamalıdır; aksi hâlde işlem ortada yarıda kalabilir veya tutarsız bir VM oluşturulabilir.</p>
+
+                <h2>Restore Sonrası Adımlar</h2>
+                <ul>
+                    <li>Restore tamamlandığında VM adı, konumlandırıldığı datastore ve verilen yeni isim bir açıklama kaydına yazılır; bu bilgi ilerideki işlemler için izlenebilirliği sağlar.</li>
+                    <li>Restore sırasında hata alınırsa olay backup ekibine iletilir ve ilgili sunucu bloke edilir.</li>
+                    <li>Planlama tarafından bir talep açılmışsa süreç ilgili plan dahilinde devam ettirilir.</li>
+                    <li>Müşteri tarafından talep açılmışsa işlem tamamlandığında müşteri e-postasına bilgilendirme yanıtı gönderilir.</li>
+                </ul>
+
+                <div class="callout">
+                    <strong>💡 İpucu:</strong> Restore edilen VM'i açmadan önce vCenter üzerinde Display Name ve ağ portgroup atamalarını doğrulayın. IP adresi çakışmasını önlemek için VM'i açmadan önce orijinal VM'in kapalı veya ağdan yalıtılmış olduğundan emin olun.
+                </div>

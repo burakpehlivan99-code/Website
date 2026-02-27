@@ -1,0 +1,176 @@
+<span class="article-tag">Linux · RHEL / CentOS</span>
+<h1>RHEL / CentOS 7 Kurulum ve Kurulum Sonrası Konfigürasyon Rehberi</h1>
+<div class="article-meta-row">
+    <span>📅 11 Şubat 2026</span>
+    <span>⏱ 14 dk okuma</span>
+    <span>✍️ Burak Pehlivanoğlu</span>
+</div>
+
+<p>Red Hat Enterprise Linux (RHEL) ve türevi dağıtımlar olan Oracle Linux ile CentOS 7, kurumsal sunucu altyapılarının temel taşlarından biridir. Bu rehberde RHEL 7.4 üzerinden kurulum adımlarını ve kurulum sonrası zorunlu konfigürasyonları ele alıyoruz. Adımların büyük çoğunluğu CentOS 7 ve Oracle Linux 7 için de geçerlidir; farklılaşan noktalarda dağıtım belirtilmiştir.</p>
+
+<div class="callout">
+    <strong>ℹ️ Ön Bilgi:</strong> Kurulum RHEL 7.4 ISO'su ile gerçekleştirilir. Sunucuya ISO fiziksel veya sanal ortamda bağlanır. Ağ konfigürasyonunda backup kartlar ile data kartların route tanımlamaları farklıdır; dikkatle uygulanmalıdır.
+</div>
+
+<h2>Kurulum Adımları</h2>
+
+<div class="step-grid">
+    <div class="step-item">
+        <div class="step-num">1</div>
+        <div class="step-body">
+            <strong>ISO'yu Bağlayın ve Önyükleme</strong>
+            <span>ISO sunucuya takılır. Önyükleme menüsünden <strong>Install Red Hat Enterprise Linux 7.4</strong> seçeneğini seçin.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">2</div>
+        <div class="step-body">
+            <strong>Dil Seçimi</strong>
+            <span>Kurulum dili olarak <strong>English</strong> seçin ve devam edin.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">3</div>
+        <div class="step-body">
+            <strong>Tarih ve Saat</strong>
+            <span>Kurulum özetinden <strong>Date &amp; Time</strong> seçeneğine girin. Bölge: <strong>Europe/Istanbul</strong> olarak ayarlayın.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">4</div>
+        <div class="step-body">
+            <strong>Klavye Düzeni</strong>
+            <span><strong>Keyboard</strong> ekranından <strong>Turkish</strong> klavye düzenini ekleyin.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">5</div>
+        <div class="step-body">
+            <strong>Ağ ve Hostname Konfigürasyonu</strong>
+            <span><strong>Network &amp; Hostname</strong> ekranına girin. Hostname alanına envanterdeki <strong>tam FQDN</strong>'i yazın. Ağ kartında <strong>IPv4 → Manual → Add</strong> ile IP, Netmask ve Gateway girin. <strong>"Require IPv4 for this connection"</strong> seçeneğini işaretleyin. Backup kart için Routes sekmesinde route girilir; data kart için girilmez. <strong>Backup Gateway kurulumda kesinlikle girilmez.</strong> IPv6: Ignore.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">6</div>
+        <div class="step-body">
+            <strong>Disk Bölümleme</strong>
+            <span><strong>Installation Destination</strong> ekranında ilgili diski seçin, <strong>"I will configure partitioning"</strong> seçeneğini işaretleyip <strong>Done</strong> yapın. Bölüm planını bir sonraki adımda uygulayın.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">7</div>
+        <div class="step-body">
+            <strong>Bölüm Planı (50 GB Disk)</strong>
+            <span><code>/boot</code>: 1024 MB standart bölüm. LVM Volume Group: <code>vg_root</code>. Logical Volume'lar: <code>lv_swap</code> → 8192 MB (swap), <code>lv_home</code> → 10240 MB (<code>/home</code>), <code>lv_root</code> → kalan tüm alan (<code>/</code>).</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">8</div>
+        <div class="step-body">
+            <strong>Root Şifresi ve Kurulumu Tamamlama</strong>
+            <span>Root şifresini <code>111111</code> olarak girin. Kurulum tamamlandığında sistemi yeniden başlatın.</span>
+        </div>
+    </div>
+</div>
+
+<div class="callout warning">
+    <strong>⚠️ Bölümleme Uyarısı:</strong> LVM grubu ve logical volume'lar oluşturulurken <code>vg_root</code> ismine dikkat edin. lv_swap'a swap tipi atanmalı; lv_home ve lv_root için xfs veya ext4 dosya sistemi seçilebilir.
+</div>
+
+<h2>Kurulum Sonrası Konfigürasyon</h2>
+
+<h3>1. Backup Route Tanımları</h3>
+<p>Backup kart üzerinden erişilmesi gereken ağlar için static route tanımları NetworkManager script dosyasına yazılır:</p>
+<div class="code-block"><pre>vi /etc/sysconfig/network-scripts/route-ens&lt;sayı&gt;
+# 172.25.252.0/22 via 172.24.140.254
+# 195.87.254.0/28 via 172.24.140.254
+
+sudo systemctl restart NetworkManager.service</pre></div>
+
+<h3>2. SSH Root Erişimi</h3>
+<div class="code-block"><pre>vi /etc/ssh/sshd_config
+# PermitRootLogin yes olarak ayarlayın
+
+systemctl restart sshd</pre></div>
+
+<h3>3. Host Dosyası ve Hostname Kontrolü</h3>
+<div class="code-block"><pre>vi /etc/hosts
+# data_IP    full.fqdn.domain    kisa_hostname
+
+hostname
+hostnamectl</pre></div>
+
+<h3>4. Firewall Devre Dışı Bırakma</h3>
+<div class="code-block"><pre>systemctl stop firewalld
+systemctl disable firewalld</pre></div>
+
+<h3>5. KS Kullanıcı ve Grup Oluşturma</h3>
+<p>Kullanıcı ve grup bilgileri envantere göre belirlenir. Örnek yapı:</p>
+<div class="code-block"><pre>groupadd -g 420 ksgrp248
+groupadd -g 421 ksunx248
+
+useradd -m -g ksunx248 -G ksgrp248 -u 421 -c "UNIX Admin" ksunx248</pre></div>
+
+<h3>6. Sudo Yetkilendirmesi</h3>
+<div class="code-block"><pre>vi /etc/sudoers
+
+# KS SUDOERS
+Cmnd_Alias BASH = /bin/bash
+Cmnd_Alias SU = /bin/su
+%ksgrp248 ALL= NOPASSWD: ALL, !SU, !SHELLS, !BASH
+ksunx248 ALL = NOPASSWD: ALL</pre></div>
+
+<h3>7. SELinux Devre Dışı Bırakma</h3>
+<div class="code-block"><pre>sed -i 's/^SELINUX=.*$/SELINUX=disabled/g' /etc/selinux/config
+# Değişiklik bir sonraki reboot'ta aktif olur
+# Anlık devre dışı bırakmak için:
+setenforce 0</pre></div>
+
+<h3>8. Repo Tanımı ve Paket Kurulumu</h3>
+<p>Önce mevcut repo dosyalarını temizleyin, ardından ortama uygun repo tanımını ekleyin:</p>
+<div class="code-block"><pre>rm -rf /etc/yum.repos.d/*.repo</pre></div>
+
+<p>Yeni repo dosyasını oluşturun (sürüme göre baseurl seçin):</p>
+<ul>
+    <li><strong>RHEL 7:</strong> <code>baseurl=http://172.25.254.105/rhel/7.0/x86_64/</code></li>
+    <li><strong>CentOS 7:</strong> <code>baseurl=http://172.25.254.105/centos/7.9/x86_64/</code></li>
+    <li><strong>RHEL 8:</strong> AppStream ve BaseOS için ayrı iki repo tanımı gereklidir</li>
+</ul>
+
+<div class="callout">
+    <strong>ℹ️ Sadece Data IP:</strong> Yönetim ağına erişim yoksa paket kurulumu için DVD/ISO'yu local repo olarak bağlayın: <code>mount /dev/cdrom /mnt</code> ve repo dosyasında <code>baseurl=file:///mnt</code> tanımlayın.
+</div>
+
+<p>Paket kurulumu:</p>
+<div class="code-block"><pre>yum install -y lsscsi tcp_wrappers sg3_utils ksh net-snmp telnet ntp ntpdate autofs</pre></div>
+
+<h3>9. NTP Konfigürasyonu</h3>
+<div class="code-block"><pre>sed -i "s/^server/#server/g" /etc/ntp.conf
+echo 'server 172.25.253.14' >> /etc/ntp.conf
+
+systemctl enable ntpd
+service ntpd start</pre></div>
+
+<h3>10. Servis Konfigürasyonu</h3>
+<div class="code-block"><pre>systemctl enable autofs
+systemctl start autofs
+systemctl disable firewalld</pre></div>
+
+<h3>11. Ek Disk Ekleme (LVM)</h3>
+<div class="code-block"><pre>pvcreate /dev/sdX
+vgcreate vg_data /dev/sdX
+lvcreate -L 50G -n lv_data vg_data
+mkfs.xfs /dev/vg_data/lv_data
+
+# /etc/fstab'a ekleyin:
+/dev/vg_data/lv_data  /data  xfs  defaults  0 0</pre></div>
+
+<h3>12. Kapanış Doğrulamaları</h3>
+<div class="code-block"><pre>cat /etc/*release    # OS versiyon bilgisi
+lsblk                # disk ve bölüm yapısı
+hostname             # hostname kontrolü
+ip a                 # ağ arayüzleri ve IP adresleri</pre></div>
+
+<div class="callout">
+    <strong>💡 Pro Tip:</strong> Kurulum sonrası <code>getenforce</code> komutu ile SELinux durumunu, <code>systemctl status ntpd</code> ile NTP servisini, <code>systemctl status firewalld</code> ile firewall durumunu kontrol edin. Bu üç servisin beklenen durumda olduğunu doğrulamak, ilerleyen aşamalarda karşılaşılabilecek bağlantı ve izin sorunlarının önüne geçer.
+</div>

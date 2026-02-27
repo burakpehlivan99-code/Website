@@ -1,0 +1,256 @@
+<span class="article-tag">Linux · Unix</span>
+                <h1>Linux Sistem Yöneticisi Komut Rehberi: Günlük Operasyonlarda Kullandığım Her Şey</h1>
+                <div class="article-meta-row">
+                    <span>📅 17 Şubat 2026</span>
+                    <span>⏱ 11 dk okuma</span>
+                    <span>✍️ Burak Pehlivanoğlu</span>
+                </div>
+
+                <p>Linux sistem yönetimi yaparken aynı komutlara tekrar tekrar bakarken buluyordum kendimi. Bu rehberi o ihtiyaçtan yola çıkarak hazırladım: hostname değiştirmeden LVM yönetimine, tar arşivlemeden ağ konfigürasyonuna kadar günlük operasyonlarda kullandığım her komutu tek bir yerde topladım. Hem referans hem de öğrenme kaynağı olarak kullanabilirsiniz.</p>
+
+                <h2>Hostname Değiştirme</h2>
+                <p>Yeni kurulan bir sunucuda yapılacak ilk işlemlerden biri hostname'i düzgün ayarlamaktır. Hem <code>hostnamectl</code> komutu hem de <code>/etc/hosts</code> dosyası güncellenmeli.</p>
+                <div class="code-block"><pre>hostnamectl set-hostname server.yourdomain.com</pre></div>
+                <p>Ardından <code>/etc/hosts</code> dosyasını düzenleyin ve sunucunun IP'sine karşılık yeni hostname'i ekleyin:</p>
+                <div class="code-block"><pre>sudo vi /etc/hosts
+# Şu satırı ekleyin veya güncelleyin:
+192.168.1.10    server.yourdomain.com server</pre></div>
+
+                <h2>Dizin ve Navigasyon Komutları</h2>
+                <table class="cmd-table">
+                    <thead>
+                        <tr><th>Komut</th><th>Açıklama</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>pwd</code></td><td>Bulunduğunuz dizini gösterir (Print Working Directory)</td></tr>
+                        <tr><td><code>cd /etc</code></td><td>Belirtilen dizine geçer</td></tr>
+                        <tr><td><code>cd</code></td><td>Parametresiz kullanılırsa home dizinine döner</td></tr>
+                        <tr><td><code>cd ..</code></td><td>Bir üst dizine çıkar</td></tr>
+                        <tr><td><code>cd /</code></td><td>Kök dizine gider</td></tr>
+                        <tr><td><code>ls</code></td><td>Dizin içeriğini listeler</td></tr>
+                        <tr><td><code>ls -l</code></td><td>Uzun formatta listeler (izinler, sahip, boyut, tarih)</td></tr>
+                        <tr><td><code>ls /etc</code></td><td>Belirtilen dizinin içeriğini listeler</td></tr>
+                        <tr><td><code>ls ~</code></td><td>Home dizinini listeler</td></tr>
+                        <tr><td><code>ls -a</code></td><td>Gizli dosyalar dahil tümünü gösterir</td></tr>
+                        <tr><td><code>ls -ls</code></td><td>Boyuta göre sıralar</td></tr>
+                        <tr><td><code>ls -lsS</code></td><td>Boyuta göre büyükten küçüğe sıralar</td></tr>
+                    </tbody>
+                </table>
+
+                <h2>Dizin ve Dosya Yönetimi</h2>
+                <div class="code-block"><pre># Tek dizin oluştur
+mkdir ~/testdir
+
+# İç içe dizin yapısı oluştur (-p olmadan ara dizinler yoksa hata verir)
+mkdir -p ~/dir1/dir2/dir3
+
+# Boş dizin sil
+rmdir ~/testdir
+
+# Web'den dosya indir
+wget https://example.com/dosya.tar.gz
+
+# Dosya veya dizin taşı / yeniden adlandır
+mv eskiad.txt yeniad.txt
+mv /kaynak/dosya /hedef/
+
+# Boş dosya oluştur
+touch yenidosya.txt
+
+# Belirli timestamp ile dosya oluştur
+touch -t 202501011200 dosya.txt</pre></div>
+
+                <h2>Servis Yönetimi (systemctl)</h2>
+                <div class="callout">
+                    <strong>💡 Not:</strong> <code>start</code> servisi o an başlatır; <code>enable</code> ise sunucu yeniden başladığında otomatik başlamasını sağlar. İkisini birlikte kullanmak en doğrusudur.
+                </div>
+                <div class="code-block"><pre>sudo systemctl status nginx      # Servis durumunu göster
+sudo systemctl start nginx       # Servisi başlat
+sudo systemctl stop nginx        # Servisi durdur
+sudo systemctl restart nginx     # Servisi yeniden başlat
+sudo systemctl enable nginx      # Sunucu açılışında otomatik başlat
+sudo systemctl disable nginx     # Otomatik başlatmayı kapat</pre></div>
+
+                <h2>/etc/hosts Düzenleme (vi ile)</h2>
+                <p>vi editörü alışkın olmayanlar için kafa karıştırıcı olabilir. Temel iş akışı şudur:</p>
+                <div class="code-block"><pre>sudo vi /etc/hosts
+# Dosya açıldıktan sonra:
+# i   → Insert moduna gir (düzenleme yapabilirsiniz)
+# Esc → Normal moda dön
+# :wq! → Kaydet ve çık (write + quit + force)</pre></div>
+
+                <h2>Sistem Bilgisi Komutları</h2>
+                <table class="cmd-table">
+                    <thead>
+                        <tr><th>Komut</th><th>Açıklama</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>ps -ef | grep nginx</code></td><td>Çalışan processler arasında nginx'i filtrele</td></tr>
+                        <tr><td><code>cat /etc/services</code></td><td>Tanımlı servis ve port listesini göster</td></tr>
+                        <tr><td><code>df -h</code></td><td>Disk kullanımını okunabilir formatta göster</td></tr>
+                        <tr><td><code>du -sh /var/log</code></td><td>Belirtilen dizinin toplam boyutunu göster</td></tr>
+                        <tr><td><code>lsblk</code></td><td>Block cihazları (diskler, partisyonlar) listele</td></tr>
+                        <tr><td><code>cat /etc/*release</code></td><td>Linux dağıtım ve sürüm bilgisini göster</td></tr>
+                    </tbody>
+                </table>
+
+                <h2>Dosya Silme</h2>
+                <div class="code-block"><pre># .bak uzantılı tüm dosyaları sil (dikkatli kullanın!)
+rm -rf *.bak
+
+# Tek dosya sil
+rm dosya.txt
+
+# Dizin ve içeriğini sil
+rm -rf /tmp/eskiklasör</pre></div>
+
+                <h2>Ağ Konfigürasyonu</h2>
+                <div class="code-block"><pre># Ağ interface konfigürasyonlarına git (RHEL/CentOS)
+cd /etc/sysconfig/network
+
+# Interface'i kapat ve aç
+sudo ifdown ens192
+sudo ifup ens192</pre></div>
+
+                <h3>DNS Ayarı</h3>
+                <div class="code-block"><pre>vi /etc/resolv.conf
+# Şu satırı ekleyin:
+nameserver 8.8.8.8
+nameserver 8.8.4.4</pre></div>
+
+                <h3>nmtui ile Ağ Konfigürasyonu (RHEL/CentOS)</h3>
+                <p><code>nmtui</code>, terminal üzerinden BIOS benzeri bir arayüzle ağ ayarlarını yapmanızı sağlar. IP, gateway, DNS gibi ayarları grafik-benzeri menülerle düzenleyebilirsiniz.</p>
+                <div class="code-block"><pre>nmtui</pre></div>
+
+                <h2>Yönlendirme Operatörleri</h2>
+                <table class="cmd-table">
+                    <thead>
+                        <tr><th>Operatör</th><th>İşlev</th><th>Örnek</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>&gt;</code></td><td>Çıktıyı dosyaya yaz (üzerine yazar)</td><td><code>ls &gt; liste.txt</code></td></tr>
+                        <tr><td><code>&gt;&gt;</code></td><td>Çıktıyı dosyaya ekle (mevcut içeriği korur)</td><td><code>ls &gt;&gt; liste.txt</code></td></tr>
+                        <tr><td><code>|</code></td><td>Pipe: sol komutun çıktısını sağa yönlendir</td><td><code>ps -ef | grep nginx</code></td></tr>
+                        <tr><td><code>grep</code></td><td>Metinde desen arama</td><td><code>cat /etc/hosts | grep 192</code></td></tr>
+                    </tbody>
+                </table>
+
+                <h2>Kopyalama ve Taşıma</h2>
+                <div class="code-block"><pre># Dosya kopyala
+cp kaynak.txt hedef.txt
+
+# Dizini recursive kopyala
+cp -r /kaynak/dizin /hedef/dizin
+
+# Yeniden adlandır (mv ile)
+mv eskiad.txt yeniad.txt</pre></div>
+
+                <h2>Linux Kullanıcı Sistemi</h2>
+                <p>Linux'ta kullanıcı bilgileri birkaç farklı dosyada tutulur:</p>
+                <table class="cmd-table">
+                    <thead>
+                        <tr><th>Dosya / Komut</th><th>İçerik</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>/etc/passwd</code></td><td>Kullanıcı hesapları (şifre hash'i burda değil)</td></tr>
+                        <tr><td><code>/etc/shadow</code></td><td>Şifrelenmiş parola hash'leri ve parola politikası</td></tr>
+                        <tr><td><code>/etc/group</code></td><td>Grup tanımları ve üyelikleri</td></tr>
+                        <tr><td><code>id</code></td><td>Mevcut kullanıcının UID, GID ve grup bilgisi</td></tr>
+                        <tr><td><code>id -u</code></td><td>Sadece UID numarasını göster</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>chage ile Parola Yönetimi</h3>
+                <div class="code-block"><pre># Kullanıcının parola bilgilerini göster
+chage -l kullanici
+
+# Hesap bitiş tarihini ayarla (YYYY-MM-DD)
+chage -E 2026-12-31 kullanici
+
+# Hesabı kilitle (bitiş tarihi -1 = süresiz)
+chage -E -1 kullanici</pre></div>
+
+                <h2>Linux Dosya Sistemleri</h2>
+                <table class="cmd-table">
+                    <thead>
+                        <tr><th>Dosya Sistemi</th><th>Özellikler</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><strong>ext</strong></td><td>İlk Linux dosya sistemi, tarihsel</td></tr>
+                        <tr><td><strong>ext2</strong></td><td>Maksimum 2 TB, journaling yok</td></tr>
+                        <tr><td><strong>ext3</strong></td><td>ext2 + journaling (güç kesilmesine karşı dayanıklı)</td></tr>
+                        <tr><td><strong>ext4</strong></td><td>16 TB'a kadar, sıkıştırma desteği, modern Linux standardı</td></tr>
+                        <tr><td><strong>XFS</strong></td><td>Yüksek performanslı, RHEL varsayılanı, büyük dosyalar için ideal</td></tr>
+                        <tr><td><strong>swap</strong></td><td>RAM yetersizliğinde kullanılan disk alanı</td></tr>
+                    </tbody>
+                </table>
+
+                <h2>Tar ile Arşivleme</h2>
+                <p>Tar parametrelerini hatırlamak için: <strong>cvf</strong> = Create Verbose File, <strong>xvf</strong> = eXtract Verbose File.</p>
+                <table class="cmd-table">
+                    <thead>
+                        <tr><th>Parametre</th><th>Anlamı</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>-c</code></td><td>Yeni arşiv oluştur (create)</td></tr>
+                        <tr><td><code>-x</code></td><td>Arşivden çıkar (extract)</td></tr>
+                        <tr><td><code>-t</code></td><td>Arşiv içeriğini listele</td></tr>
+                        <tr><td><code>-v</code></td><td>Verbose: işlem adımlarını ekrana yaz</td></tr>
+                        <tr><td><code>-z</code></td><td>gzip sıkıştırması kullan (.tar.gz)</td></tr>
+                        <tr><td><code>-f</code></td><td>Dosya adını belirt (en sona gelir)</td></tr>
+                    </tbody>
+                </table>
+                <div class="code-block"><pre># Arşiv oluştur
+tar -cvf arsiv.tar /var/log
+
+# gzip ile sıkıştırarak arşivle
+tar -cvzf arsiv.tar.gz /var/log
+
+# Arşiv içeriğini listele
+tar -tvf arsiv.tar.gz
+
+# Arşivden çıkar
+tar -xvf arsiv.tar.gz
+
+# Belirtilen dizine çıkar
+tar -xvf arsiv.tar.gz -C /tmp/cikti</pre></div>
+
+                <h2>LVM Yönetim Komutları</h2>
+                <div class="code-block"><pre># Volume group'ları listele
+vgs
+
+# Logical volume'leri tara
+lvscan
+
+# Logical volume'ü yeniden adlandır
+sudo lvrename /dev/vg_data/lv_eski /dev/vg_data/lv_yeni
+
+# fstab'ı düzenle (kalıcı mount için)
+vi /etc/fstab
+
+# fstab'daki tüm mount'ları test et
+mount -a</pre></div>
+
+                <div class="callout">
+                    <strong>⚠️ Dikkat:</strong> <code>/etc/fstab</code> dosyasına hatalı bir satır eklerseniz, sunucu bir sonraki açılışta maintenance mode'a düşer. Bu durumda root şifresiyle sisteme girip fstab'ı düzeltmeniz gerekir.
+                </div>
+
+                <h2>Paket Yönetimi</h2>
+                <table class="cmd-table">
+                    <thead>
+                        <tr><th>Dağıtım</th><th>Komut</th><th>Açıklama</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Ubuntu/Debian</td><td><code>apt-get clean</code></td><td>İndirilen paket önbelleğini temizle</td></tr>
+                        <tr><td>Ubuntu/Debian</td><td><code>apt-get update</code></td><td>Paket listesini güncelle</td></tr>
+                        <tr><td>RHEL/CentOS</td><td><code>yum clean all</code></td><td>Yum önbelleğini temizle</td></tr>
+                        <tr><td>RHEL/CentOS</td><td><code>yum update</code></td><td>Tüm paketleri güncelle</td></tr>
+                        <tr><td>SUSE</td><td><code>zypper refresh</code></td><td>Depo listesini güncelle</td></tr>
+                        <tr><td>SUSE</td><td><code>zypper update</code></td><td>Paketleri güncelle</td></tr>
+                        <tr><td>SUSE</td><td><code>zypper install paket</code></td><td>Paket kur</td></tr>
+                    </tbody>
+                </table>
+
+                <div class="callout">
+                    <strong>💡 Pro Tip:</strong> SUSE Linux'ta paket yöneticisi <code>zypper</code>'dır (eski adıyla <code>zipper</code> olarak da anılır). RHEL/CentOS'ta yum'un yerini RHEL 8 ve sonrasında DNF almıştır, ancak yum komutu geriye dönük uyumluluk için hâlâ çalışır.
+                </div>

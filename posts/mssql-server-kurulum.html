@@ -1,0 +1,481 @@
+<span class="article-tag">Microsoft · SQL Server</span>
+<h1>MSSQL Server Kurulum Rehberi: Disk Yapılandırmasından Güvenlik Sertleştirmesine</h1>
+<div class="article-meta-row">
+    <span>📅 23 Şubat 2026</span>
+    <span>⏱ 15 dk okuma</span>
+    <span>✍️ Burak Pehlivanoğlu</span>
+</div>
+
+<p>Microsoft SQL Server kurulumu, disk yapılandırmasından TempDB optimizasyonuna, güvenlik sertleştirmesinden audit politikalarına kadar birçok kritik adımı kapsar. Yanlış yapılandırılmış bir kurulum; performans sorunlarına, veri kaybı risklerine ve güvenlik açıklarına zemin hazırlar. Bu rehberde kurumsal ortamlarda SQL Server kurulumunu baştan sona, adım adım ele alıyoruz.</p>
+
+<div class="callout">
+    <strong>ℹ️ Rehber Kapsamı:</strong> Bu döküman SQL Server 2019 / 2022 kurulumunu hedef almaktadır. Disk ön hazırlığı, kurulum parametreleri, güvenlik sertleştirme scriptleri ve Cumulative Update kurulumu dahil tüm aşamalar ele alınmıştır. T-SQL scriptleri gerçek kurumsal ortam pratiklerini yansıtmaktadır.
+</div>
+
+<h2>1. Kurulum Öncesi: Disk Yapılandırması</h2>
+<p>SQL Server kurulumunun en kritik ve en sık ihmal edilen adımı disk yapılandırmasıdır. Tüm verileri tek bir diske koymak; I/O çakışmalarına, TempDB kaynaklı performans sorunlarına ve log yönetimini güçleştiren karmaşık bir yapıya neden olur. Aşağıdaki üç disk yapısı kurumsal SQL Server ortamlarında standart kabul edilir:</p>
+
+<div class="info-grid">
+    <div class="info-item">
+        <span class="info-label">Data Diski</span>
+        <span class="info-value">150 GB — Kullanıcı veritabanı MDF ve NDF dosyaları için. NTFS, varsayılan allocation unit size.</span>
+    </div>
+    <div class="info-item">
+        <span class="info-label">TempDB Diski</span>
+        <span class="info-value">50 GB — TempDB data ve log dosyaları için. <strong>64 KB allocation unit size (x64 format)</strong> ile formatlanmalıdır.</span>
+    </div>
+    <div class="info-item">
+        <span class="info-label">Log Diski</span>
+        <span class="info-value">50 GB — Tüm veritabanlarının LDF (transaction log) dosyaları için. <strong>64 KB allocation unit size (x64 format)</strong> ile formatlanmalıdır.</span>
+    </div>
+</div>
+
+<div class="callout warning">
+    <strong>⚠️ 64 KB Allocation Unit Size Neden Önemli?</strong> SQL Server'ın I/O işlemleri 64 KB'lık bloklar üzerinde gerçekleşir. İşletim sisteminin varsayılan NTFS formatı 4 KB allocation unit size kullanır; bu durum SQL Server için gereksiz I/O amplifikasyonuna yol açar. TempDB ve Log disklerini her zaman 64 KB (65536 byte) allocation unit size ile formatlayın. Data diskini de aynı şekilde formatlarsanız yalnızca fayda sağlarsınız.
+</div>
+
+<p>Diskleri <strong>Disk Management</strong> veya aşağıdaki PowerShell komutu ile doğru allocation unit size ile formatlamak için:</p>
+
+<div class="code-block"><pre>Format-Volume -DriveLetter D -FileSystem NTFS -AllocationUnitSize 65536 -NewFileSystemLabel "SQLTEMP" -Confirm:$false
+Format-Volume -DriveLetter E -FileSystem NTFS -AllocationUnitSize 65536 -NewFileSystemLabel "SQLLOG"  -Confirm:$false</pre></div>
+
+<h2>2. SQL Server Klasör Yapısının Hazırlanması</h2>
+<p>Kuruluma başlamadan önce SQL Server'ın kullanacağı dizinleri oluşturun. Bu klasörler kurulum sihirbazında path olarak belirtilecektir:</p>
+
+<div class="code-block"><pre>mkdir C:\SQLDATA
+mkdir D:\SQLTEMP
+mkdir E:\SQLLOG</pre></div>
+
+<div class="callout">
+    <strong>💡 Klasör İsimlendirme Standardı:</strong> SQLDATA, SQLTEMP ve SQLLOG klasörlerini ilgili disklerin kök dizininde oluşturun. Bu yapı; hem yönetimi kolaylaştırır hem de gelecekte birden fazla SQL örneğini aynı sunucuda barındırma senaryolarında karışıklığı önler.
+</div>
+
+<h2>3. Kurulum Adımları</h2>
+
+<div class="step-grid">
+    <div class="step-item">
+        <div class="step-num">1</div>
+        <div class="step-body">
+            <strong>ISO'yu Sunucuya Alın ve Setup'ı Başlatın</strong>
+            <span>SQL Server ISO dosyasını sunucuya kopyalayın, mount edin veya doğrudan çıkartın. <code>setup.exe</code> dosyasını yönetici olarak çalıştırın. Sol menüden <em>Installation</em> → <em>New SQL Server stand-alone installation</em> seçeneğini tıklayın.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">2</div>
+        <div class="step-body">
+            <strong>Ürün Anahtarı ve Lisans Koşulları</strong>
+            <span>Kurumsal lisans anahtarınızı girin veya Evaluation sürümü için boş bırakın. Lisans koşullarını kabul edin. Microsoft Update entegrasyonu ekranında tercihinizi yapın.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">3</div>
+        <div class="step-body">
+            <strong>Feature Selection</strong>
+            <span>Minimum kurulum için <em>Database Engine Services</em> yeterlidir. Raporlama gerekiyorsa <em>Reporting Services</em>, SSIS pipeline işlemleri için <em>Integration Services</em> ekleyin. İhtiyaç duyulmayan özellikleri eklememek güvenlik yüzeyini daraltır.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">4</div>
+        <div class="step-body">
+            <strong>Collation (Harmanlama) Seçimi</strong>
+            <span>Bu adım son derece kritiktir ve kurulum sonrası değiştirilmesi çok güçtür. Müşteri gereksinim notuna göre collation belirleyin. Türkçe karakter desteği ve büyük/küçük harf duyarlılığı açısından en yaygın seçimler: <code>Turkish_CI_AS</code> (büyük/küçük harf duyarsız) veya müşteri talebi doğrultusunda farklı bir collation.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">5</div>
+        <div class="step-body">
+            <strong>Servis Hesapları</strong>
+            <span>SQL Server Engine ve SQL Server Agent için servis hesaplarını belirleyin. Üretim ortamında düşük yetkili domain servis hesapları kullanılması önerilir. Geliştirme/test ortamları için <em>NT AUTHORITY\NETWORK SERVICE</em> kabul edilebilir.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">6</div>
+        <div class="step-body">
+            <strong>Authentication Mode ve SA Şifresi</strong>
+            <span><em>Mixed Mode</em> seçin (Windows Authentication + SQL Server Authentication). SA (System Administrator) için güçlü bir şifre belirleyin: en az 12 karakter, büyük/küçük harf, rakam ve özel karakter. SA hesabı kurulum sonrası disable edilecektir; buna rağmen güçlü bir şifre zorunludur.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">7</div>
+        <div class="step-body">
+            <strong>SQL Server Administrators (Sysadmin) Grubunu Belirle</strong>
+            <span><em>Add Current User</em> butonuna tıklayarak mevcut yönetici hesabını ekleyin. Kurumsal ortamlarda bu alana bir AD güvenlik grubu eklenmesi önerilir; bireysel hesap yerine grup yönetimi daha sürdürülebilirdir.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">8</div>
+        <div class="step-body">
+            <strong>Data Directories Path'lerini Belirle</strong>
+            <span>Data root directory: <code>C:\SQLDATA</code>, User database directory: <code>C:\SQLDATA</code>, User database log directory: <code>E:\SQLLOG</code>, Backup directory: yedekleme lokasyonunuz. TempDB ayarları bir sonraki sekmeye taşınmıştır.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">9</div>
+        <div class="step-body">
+            <strong>TempDB Konfigürasyonu</strong>
+            <span>TempDB data dosyası dizini: <code>D:\SQLTEMP</code>, TempDB log dosyası dizini: <code>D:\SQLTEMP</code>. Data dosyası sayısı: <strong>CPU çekirdek sayısı ile eşit olacak şekilde</strong> (max 8 dosya önerilir). Her TempDB data dosyasının başlangıç boyutunu eşit olarak ayarlayın; bu anlık şişme sorunlarını önler.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">10</div>
+        <div class="step-body">
+            <strong>Kurulumu Tamamla ve Doğrula</strong>
+            <span>Özet ekranını kontrol edin ve <em>Install</em> butonuna tıklayın. Kurulum 5–15 dakika sürer. Tamamlandığında SQL Server Management Studio (SSMS) ile bağlanarak <code>SELECT @@VERSION</code> sorgusu ile kurulumu doğrulayın.</span>
+        </div>
+    </div>
+</div>
+
+<h2>4. SQL Server Management Studio (SSMS) Kurulumu</h2>
+<p>SSMS, SQL Server kurulumundan ayrı olarak dağıtılan ücretsiz bir yönetim aracıdır. Microsoft'un resmi indirme sayfasından (<code>aka.ms/ssmsfullsetup</code>) en güncel versiyonu indirin ve kurulum sihirbazını varsayılan ayarlarla tamamlayın.</p>
+
+<div class="callout">
+    <strong>💡 SSMS Kurulum Sonrası İlk Kontrol:</strong> SSMS'i açın, <em>localhost</em> veya sunucu adına bağlanın ve aşağıdaki sorguyu çalıştırın. SQL Server versiyonu, edition ve patch level bilgisi döner.
+</div>
+
+<div class="code-block"><pre>SELECT @@VERSION;</pre></div>
+
+<h2>5. SQL Kullanıcılarının Oluşturulması</h2>
+<p>Kurulum tamamlandıktan sonra kurumsal standartlara uygun Windows kimlik doğrulamalı SQL kullanıcılarını ekleyin. Aşağıdaki örnekte sunucu adına bağlı beş servis hesabı, <code>sysadmin</code> rolüyle eklenmektedir. While döngüsü kullanılarak tekrarlayan kod önlenmiştir:</p>
+
+<div class="code-block"><pre>USE [master];
+GO
+
+DECLARE @kullanici NVARCHAR(100);
+DECLARE @sql NVARCHAR(500);
+DECLARE @sunucu NVARCHAR(100) = CAST(SERVERPROPERTY('MachineName') AS NVARCHAR(100));
+
+-- Eklenecek kullanıcı suffixleri
+DECLARE @suffixler TABLE (id INT IDENTITY(1,1), suffix NVARCHAR(50));
+INSERT INTO @suffixler (suffix) VALUES
+    ('\ksod248'),
+    ('\ksdb248'),
+    ('\ksbck248'),
+    ('\ksid248'),
+    ('\kssyy248');
+
+DECLARE @i INT = 1;
+DECLARE @toplam INT = (SELECT COUNT(*) FROM @suffixler);
+
+WHILE @i <= @toplam
+BEGIN
+    SELECT @kullanici = @sunucu + suffix FROM @suffixler WHERE id = @i;
+
+    IF NOT EXISTS (SELECT 1 FROM sys.server_principals WHERE name = @kullanici)
+    BEGIN
+        SET @sql = N'CREATE LOGIN [' + @kullanici + N'] FROM WINDOWS WITH DEFAULT_DATABASE=[master];
+                     ALTER SERVER ROLE [sysadmin] ADD MEMBER [' + @kullanici + N'];';
+        EXEC sp_executesql @sql;
+        PRINT 'Oluşturuldu: ' + @kullanici;
+    END
+    ELSE
+        PRINT 'Zaten mevcut: ' + @kullanici;
+
+    SET @i = @i + 1;
+END
+GO</pre></div>
+
+<div class="callout warning">
+    <strong>⚠️ Sysadmin Rolü Dikkatli Verilmeli:</strong> Yukarıdaki script servis hesaplarına <code>sysadmin</code> rolü vermektedir. Üretim ortamında gerçek uygulama kullanıcıları için minimum yetki prensibini (least privilege) uygulayın; yalnızca ihtiyaç duyulan veritabanlarında ve işlemlerde yetkilendirme yapın. Sysadmin yetkisi yalnızca DBA ve servis yönetim hesapları için verilmelidir.
+</div>
+
+<h2>6. RAM Konfigürasyonu</h2>
+<p>SQL Server, varsayılan olarak tüm sistem belleğini kullanmaya çalışır. Bu durum işletim sistemi ve diğer servislerin bellek yetersizliği yaşamasına yol açar. Genel kural olarak <strong>toplam RAM'in %80'i SQL Server'a ayrılır</strong>; kalan %20 işletim sistemi ve diğer süreçler için bırakılır.</p>
+
+<div class="code-block"><pre>-- Örnek: 64 GB RAM'li sunucu için (64 * 0.80 = 51.2 GB ≈ 52428 MB)
+USE [master];
+GO
+
+EXEC sp_configure 'show advanced options', 1;
+RECONFIGURE;
+
+-- max server memory (MB) cinsinden belirtin
+EXEC sp_configure 'max server memory', 52428;
+RECONFIGURE;
+
+-- Ayarı doğrula
+EXEC sp_configure 'max server memory';
+GO</pre></div>
+
+<div class="callout">
+    <strong>💡 Minimum Memory de Ayarlanmalı:</strong> <code>min server memory</code> değerini de makul bir düzeye ayarlayın (örneğin 1024 MB). Bu sayede SQL Server belleği tamamen boşaltmaz ve performans dalgalanmaları azalır. Bellek miktarına göre min/max değerlerini dengeli tutun.
+</div>
+
+<h2>7. Reboot Sonrası Güvenlik Sertleştirme Scriptleri</h2>
+<p>Sunucu yeniden başlatıldıktan sonra aşağıdaki güvenlik scriptlerini sırasıyla çalıştırın. Bu adımlar kurumsal güvenlik standartlarının zorunlu bir parçasıdır.</p>
+
+<h3>7.1 SA Hesabını Devre Dışı Bırakma</h3>
+<p>SA hesabı bilinen bir hedef olduğundan brute-force saldırılarına karşı devre dışı bırakılmalıdır. Mixed Mode kurulumda SA hesabı oluşturulur ancak aktif bırakılmamalıdır:</p>
+
+<div class="code-block"><pre>USE [master];
+GO
+
+-- SA hesabını disable et
+ALTER LOGIN [sa] DISABLE;
+
+-- SA hesabının adını da değiştirerek ek koruma sağla
+ALTER LOGIN [sa] WITH NAME = [sql_sa_disabled];
+
+-- Doğrula
+SELECT name, is_disabled FROM sys.server_principals WHERE name IN ('sa', 'sql_sa_disabled');
+GO</pre></div>
+
+<h3>7.2 Örnek Veritabanlarını Sil</h3>
+<p>SQL Server kurulumu ile birlikte gelen AdventureWorks, Northwind ve Pubs örnek veritabanları üretim ortamında gereksiz bir saldırı yüzeyi oluşturur ve kaldırılmalıdır:</p>
+
+<div class="code-block"><pre>USE [master];
+GO
+
+-- AdventureWorks (birden fazla versiyon kurulmuş olabilir)
+IF EXISTS (SELECT name FROM sys.databases WHERE name LIKE 'AdventureWorks%')
+BEGIN
+    DECLARE @dbname NVARCHAR(100);
+    DECLARE db_cursor CURSOR FOR
+        SELECT name FROM sys.databases WHERE name LIKE 'AdventureWorks%';
+    OPEN db_cursor;
+    FETCH NEXT FROM db_cursor INTO @dbname;
+    WHILE @@FETCH_STATUS = 0
+    BEGIN
+        EXEC('ALTER DATABASE [' + @dbname + '] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;');
+        EXEC('DROP DATABASE [' + @dbname + '];');
+        PRINT 'Silindi: ' + @dbname;
+        FETCH NEXT FROM db_cursor INTO @dbname;
+    END
+    CLOSE db_cursor;
+    DEALLOCATE db_cursor;
+END
+
+-- Northwind
+IF EXISTS (SELECT name FROM sys.databases WHERE name = 'Northwind')
+BEGIN
+    ALTER DATABASE [Northwind] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+    DROP DATABASE [Northwind];
+    PRINT 'Silindi: Northwind';
+END
+
+-- pubs
+IF EXISTS (SELECT name FROM sys.databases WHERE name = 'pubs')
+BEGIN
+    ALTER DATABASE [pubs] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+    DROP DATABASE [pubs];
+    PRINT 'Silindi: pubs';
+END
+GO</pre></div>
+
+<h3>7.3 Server Audit Oluşturma</h3>
+<p>SQL Server Audit, kritik güvenlik olaylarını Windows Application Log'a veya dosyaya yazar. Uyumluluk gereksinimleri ve güvenlik izleme açısından zorunludur:</p>
+
+<div class="code-block"><pre>USE [master];
+GO
+
+-- Mevcut audit varsa kaldır
+IF EXISTS (SELECT name FROM sys.server_audits WHERE name = 'SQL_SECURITY_AUDIT')
+BEGIN
+    ALTER SERVER AUDIT [SQL_SECURITY_AUDIT] WITH (STATE = OFF);
+    DROP SERVER AUDIT [SQL_SECURITY_AUDIT];
+END
+
+-- SERVER AUDIT oluştur — Windows Application Log'a yaz
+CREATE SERVER AUDIT [SQL_SECURITY_AUDIT]
+TO APPLICATION_LOG
+WITH
+(
+    QUEUE_DELAY        = 1000,       -- milisaniye
+    ON_FAILURE         = CONTINUE    -- Audit başarısız olursa SQL Server devam eder
+);
+
+-- Audit'i aktif et
+ALTER SERVER AUDIT [SQL_SECURITY_AUDIT] WITH (STATE = ON);
+GO</pre></div>
+
+<h3>7.4 Server Audit Specification Oluşturma</h3>
+<p>Audit Specification, hangi olay gruplarının denetleneceğini tanımlar. Aşağıdaki konfigürasyon kurumsal güvenlik standartlarını karşılayan kapsamlı bir set içerir:</p>
+
+<div class="code-block"><pre>USE [master];
+GO
+
+-- Mevcut specification varsa kaldır
+IF EXISTS (SELECT name FROM sys.server_audit_specifications WHERE name = 'SQL_SECURITY_AUDIT_SPEC')
+BEGIN
+    ALTER SERVER AUDIT SPECIFICATION [SQL_SECURITY_AUDIT_SPEC] WITH (STATE = OFF);
+    DROP SERVER AUDIT SPECIFICATION [SQL_SECURITY_AUDIT_SPEC];
+END
+
+CREATE SERVER AUDIT SPECIFICATION [SQL_SECURITY_AUDIT_SPEC]
+FOR SERVER AUDIT [SQL_SECURITY_AUDIT]
+ADD (APPLICATION_ROLE_CHANGE_PASSWORD_GROUP),
+ADD (AUDIT_CHANGE_GROUP),
+ADD (BACKUP_RESTORE_GROUP),
+ADD (DATABASE_CHANGE_GROUP),
+ADD (DATABASE_OBJECT_CHANGE_GROUP),
+ADD (DATABASE_OBJECT_OWNERSHIP_CHANGE_GROUP),
+ADD (DATABASE_OBJECT_PERMISSION_CHANGE_GROUP),
+ADD (DATABASE_OWNERSHIP_CHANGE_GROUP),
+ADD (DATABASE_PERMISSION_CHANGE_GROUP),
+ADD (DATABASE_PRINCIPAL_CHANGE_GROUP),
+ADD (DATABASE_PRINCIPAL_IMPERSONATION_GROUP),
+ADD (DATABASE_ROLE_MEMBER_CHANGE_GROUP),
+ADD (DBCC_GROUP),
+ADD (FAILED_LOGIN_GROUP),
+ADD (LOGIN_CHANGE_PASSWORD_GROUP),
+ADD (LOGOUT_GROUP),
+ADD (SCHEMA_OBJECT_CHANGE_GROUP),
+ADD (SCHEMA_OBJECT_OWNERSHIP_CHANGE_GROUP),
+ADD (SCHEMA_OBJECT_PERMISSION_CHANGE_GROUP),
+ADD (SERVER_OBJECT_CHANGE_GROUP),
+ADD (SERVER_OBJECT_OWNERSHIP_CHANGE_GROUP),
+ADD (SERVER_OBJECT_PERMISSION_CHANGE_GROUP),
+ADD (SERVER_OPERATION_GROUP),
+ADD (SERVER_PERMISSION_CHANGE_GROUP),
+ADD (SERVER_PRINCIPAL_CHANGE_GROUP),
+ADD (SERVER_PRINCIPAL_IMPERSONATION_GROUP),
+ADD (SERVER_ROLE_MEMBER_CHANGE_GROUP),
+ADD (SERVER_STATE_CHANGE_GROUP),
+ADD (SUCCESSFUL_LOGIN_GROUP),
+ADD (TRACE_CHANGE_GROUP)
+WITH (STATE = ON);
+GO</pre></div>
+
+<div class="callout">
+    <strong>💡 Audit Olaylarını Doğrulama:</strong> Audit specification oluşturulduktan sonra bir test login yapın ve Windows Event Viewer → Windows Logs → Application bölümünde SQL Server kaynaklı olayları kontrol edin. Alternatif olarak aşağıdaki sorgu ile audit kayıtlarını görüntüleyebilirsiniz:
+</div>
+
+<div class="code-block"><pre>-- Audit log kayıtlarını görüntüle
+SELECT
+    event_time,
+    action_id,
+    succeeded,
+    server_principal_name,
+    target_server_principal_name,
+    statement
+FROM sys.fn_get_audit_file('\\.\PIPE\SQLServer_*', DEFAULT, DEFAULT)
+ORDER BY event_time DESC;</pre></div>
+
+<h2>8. Cumulative Update (CU) Kurulumu</h2>
+<p>SQL Server için Microsoft'un yayımladığı Cumulative Update'ler; hata düzeltmeleri, güvenlik yamaları ve performans iyileştirmelerini içerir. Kurulum tamamlandıktan sonra Microsoft'un resmi destek sayfasından ilgili SQL Server sürümüne ait en son CU'yu indirin ve çalıştırın.</p>
+
+<div class="step-grid">
+    <div class="step-item">
+        <div class="step-num">1</div>
+        <div class="step-body">
+            <strong>Güncel CU'yu İndirin</strong>
+            <span>Microsoft Catalog (<code>catalog.update.microsoft.com</code>) veya resmi SQL Server blog sayfasından ilgili sürüme ait son CU'yu indirin. CU dosyası <code>SQLServer20xx-KBxxxxxxx-x64.exe</code> formatındadır.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">2</div>
+        <div class="step-body">
+            <strong>SQL Server Agent'ı Durdurun</strong>
+            <span>CU kurulumu öncesinde SQL Server Agent servisini durdurun. Aktif job'ların tamamlanmasını bekleyin. Üretim ortamında bakım penceresi planlanmalıdır.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">3</div>
+        <div class="step-body">
+            <strong>CU Installer'ı Çalıştırın</strong>
+            <span>CU dosyasını yönetici olarak çalıştırın. SQL Server kurulum dosyaları otomatik olarak tespit edilir. Lisans koşullarını onaylayın ve güncellemeyi başlatın. Bu işlem 5–20 dakika sürebilir.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">4</div>
+        <div class="step-body">
+            <strong>Patch Seviyesini Doğrulayın</strong>
+            <span>Kurulum tamamlandıktan sonra SQL Server Agent'ı yeniden başlatın ve SSMS üzerinden <code>SELECT @@VERSION</code> sorgusunu çalıştırın. Sonuçta CU numarasının güncel sürümle eşleştiğini doğrulayın.</span>
+        </div>
+    </div>
+</div>
+
+<h2>9. Şifre Expire Süresi Kontrolü</h2>
+<p>SQL Server üzerinde tanımlı SQL Authentication login'lerinin şifre politikası durumunu ve son şifre değişiklik tarihini aşağıdaki sorgu ile kontrol edebilirsiniz. Bu kontrol özellikle düzenli güvenlik denetimleri için kullanışlıdır:</p>
+
+<div class="code-block"><pre>USE [master];
+GO
+
+SELECT
+    sp.name                          AS LoginAdi,
+    sp.type_desc                     AS LoginTipi,
+    sp.is_disabled                   AS Disabled,
+    sp.is_policy_checked             AS PolitikaKontrol,
+    sp.is_expiration_checked         AS SureKontrol,
+    LOGINPROPERTY(sp.name, 'PasswordLastSetTime')   AS SifreSonDegisim,
+    LOGINPROPERTY(sp.name, 'DaysUntilExpiration')   AS KalanGun,
+    LOGINPROPERTY(sp.name, 'IsExpired')              AS Suresi_Dolmus,
+    LOGINPROPERTY(sp.name, 'IsLocked')               AS Kilitli,
+    LOGINPROPERTY(sp.name, 'BadPasswordCount')       AS HataliDeneme
+FROM sys.server_principals sp
+WHERE sp.type = 'S'   -- SQL Authentication logins
+  AND sp.name NOT IN ('##MS_PolicyEventProcessingLogin##', '##MS_AgentSigningCertificate##')
+ORDER BY sp.name;
+GO</pre></div>
+
+<h2>10. Kurulum Sonrası Kontrol Listesi</h2>
+
+<div class="step-grid">
+    <div class="step-item">
+        <div class="step-num">✅</div>
+        <div class="step-body">
+            <strong>Disk ve Klasör Yapısı</strong>
+            <span>SQLDATA, SQLTEMP ve SQLLOG klasörlerinin doğru disklerde oluşturulduğunu ve TempDB + Log disklerinin 64 KB allocation unit size ile formatlandığını doğrulayın.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">✅</div>
+        <div class="step-body">
+            <strong>Collation Doğrulaması</strong>
+            <span><code>SELECT SERVERPROPERTY('Collation')</code> ile sunucu collation'ının beklenen değerle eşleştiğini doğrulayın.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">✅</div>
+        <div class="step-body">
+            <strong>Max Server Memory</strong>
+            <span>RAM konfigürasyonunun doğru uygulandığını <code>EXEC sp_configure 'max server memory'</code> ile teyit edin.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">✅</div>
+        <div class="step-body">
+            <strong>SA Hesabı Disabled</strong>
+            <span><code>SELECT name, is_disabled FROM sys.server_principals WHERE name = 'sql_sa_disabled'</code> sorgusu ile SA'nın devre dışı olduğunu doğrulayın.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">✅</div>
+        <div class="step-body">
+            <strong>Örnek Veritabanları Silinmiş</strong>
+            <span><code>SELECT name FROM sys.databases</code> listesinde AdventureWorks, Northwind ve pubs görünmemeli.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">✅</div>
+        <div class="step-body">
+            <strong>Audit Aktif</strong>
+            <span><code>SELECT name, is_state_enabled FROM sys.server_audits</code> ile SQL_SECURITY_AUDIT'in aktif olduğunu doğrulayın.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">✅</div>
+        <div class="step-body">
+            <strong>CU Güncel</strong>
+            <span><code>SELECT @@VERSION</code> çıktısında CU numarasının Microsoft'un güncel yayınıyla eşleştiğini doğrulayın.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">✅</div>
+        <div class="step-body">
+            <strong>Kullanıcı Login'leri Doğrulama</strong>
+            <span><code>SELECT name, type_desc, is_disabled FROM sys.server_principals WHERE type IN ('U','S')</code> ile tüm servis hesaplarının eklendiğini ve aktif olduğunu doğrulayın.</span>
+        </div>
+    </div>
+</div>
+
+<div class="callout">
+    <strong>💡 Ek Güvenlik Adımları:</strong> Temel sertleştirme tamamlandıktan sonra aşağıdaki ek güvenlik yapılandırmaları da değerlendirin:<br><br>
+    — <strong>Varsayılan Port Değişikliği:</strong> SQL Server varsayılan olarak 1433 portunu kullanır. Bu bilinen port, tarama saldırılarının hedefidir. SQL Server Configuration Manager üzerinden farklı bir port atayın ve firewall kurallarını buna göre güncelleyin.<br><br>
+    — <strong>Encrypted Connections:</strong> SQL Server Configuration Manager → Protocols for MSSQLSERVER → Properties → Force Encryption = Yes ile tüm bağlantıların TLS üzerinden şifreli olmasını zorunlu kılın.<br><br>
+    — <strong>SQL Browser Servisini Kapat:</strong> Named instance kullanmıyorsanız SQL Browser servisini devre dışı bırakın. Bu servis, SQL Server örneklerini ağda yayınlar ve gereksiz yere saldırı yüzeyi oluşturur.
+</div>
+
+<h2>Sonuç</h2>
+<p>MSSQL Server kurulumu, doğru yapıldığında hem performanslı hem de güvenli bir veritabanı altyapısının temelini oluşturur. Disk yapılandırmasında yapılan hatalar (özellikle allocation unit size) uzun vadede ciddi performans sorunlarına yol açarken, güvenlik sertleştirme adımlarının atlanması kurumsal veriyi risk altına sokar. Bu rehberdeki adımları takip ederek standart, tekrarlanabilir ve denetlenebilir bir kurulum süreci oluşturabilirsiniz.</p>
+
+<p>Kurulum sonrasında düzenli aralıklarla patch yönetimi (CU güncellemeleri), audit log incelemesi ve kapasite izleme faaliyetlerini sürdürmek; sağlıklı bir SQL Server ortamının vazgeçilmez koşullarıdır.</p>

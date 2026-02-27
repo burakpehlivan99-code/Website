@@ -1,0 +1,324 @@
+
+<span class="article-tag">Microsoft · SQL / Oracle</span>
+<h1>SQL Server ve Oracle Disk Doluluğu Yönetimi: Adım Adım Müdahale Rehberi</h1>
+<div class="article-meta-row">
+    <span>📅 21 Şubat 2026</span>
+    <span>⏱ 12 dk okuma</span>
+    <span>✍️ Burak Pehlivanoğlu</span>
+</div>
+
+<p>Disk doluluğu, veritabanı ortamlarının en sık karşılaşılan ve en kritik olaylarından biridir. Yanlış müdahale hem veri kaybına hem de üretim kesintisine yol açabilir. Bu rehberde SQL Server ve Oracle (UNIX) ortamlarında disk doluluk senaryolarını, müdahale adımlarını ve dikkat edilmesi gereken kritik noktaları ele alacağız.</p>
+
+<h2>SQL Server Disk Doluluğu Senaryoları</h2>
+
+<p>SQL Server ortamında disk doluluğu birkaç farklı kaynaktan kaynaklanabilir. Her birinin müdahale yöntemi farklıdır; yanlış adım veri tutarsızlığına yol açar.</p>
+
+<h3>1. MS Filesystem Doluluğu</h3>
+<p>İşletim sistemi dosya sistemi dolduğunda SQL Server servisleri log yazamaz ve hata üretmeye başlar. Bu senaryoda öncelik hızlı alan açmaktır:</p>
+
+<div class="step-grid">
+    <div class="step-item">
+        <div class="step-num">1</div>
+        <div class="step-body">
+            <strong>LOG Dosyalarını Kapat</strong>
+            <span>Doluluk kritik seviyeye ulaşmışsa geçici olarak log yazımı kapatılarak acil alan açılabilir.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">2</div>
+        <div class="step-body">
+            <strong>Disk Ekle</strong>
+            <span>Kalıcı çözüm olarak ilgili volume'e yeni disk eklenerek alan genişletilir. Müşteri onayı alındıktan sonra uygulanır.</span>
+        </div>
+    </div>
+</div>
+
+<h3>2. .BAK Dosyaları Doluluğu</h3>
+<p>Yedek dosyaların birikimi disk dolulukların en yaygın nedenlerinden biridir. Müdahale önce analiz, sonra aksiyondur:</p>
+
+<div class="step-grid">
+    <div class="step-item">
+        <div class="step-num">1</div>
+        <div class="step-body">
+            <strong>TreeSize ile Analiz Et</strong>
+            <span><strong>TreeSize Free</strong> aracıyla hangi dizinin ne kadar alan kapladığını görselleştir. .bak dosyalarının konumunu ve büyüklüğünü belirle.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">2</div>
+        <div class="step-body">
+            <strong>Seçenekleri Müşteriye Sun</strong>
+            <span>İki seçenek müşteriye mail ile bildirilir: <strong>(a)</strong> eski .bak dosyalarının silinmesine onay ver, <strong>(b)</strong> farklı bir volume'e taşıma veya disk genişletme.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">3</div>
+        <div class="step-body">
+            <strong>Onay Sonrası Uygula</strong>
+            <span>Müşteri onayı gelmeden .bak dosyaları silinmez. Onay alındıktan sonra belirlenen dosyalar kaldırılır veya disk eklenir.</span>
+        </div>
+    </div>
+</div>
+
+<div class="callout warning">
+    <strong>⚠️ Dikkat:</strong> .BAK dosyaları müşteri onayı olmadan asla silinmez. Bu dosyalar son geçerli yedek olabilir; silme işlemi geri alınamaz.
+</div>
+
+<h3>3. .LDF (Transaction Log) Doluluğu</h3>
+<p>Transaction log dosyaları (.ldf) SQL Server'ın kurtarma modeliyle doğrudan ilişkilidir. Log doluluğu veritabanını "suspect" moduna alabilir.</p>
+
+<div class="step-grid">
+    <div class="step-item">
+        <div class="step-num">1</div>
+        <div class="step-body">
+            <strong>İzleme Ekibine Shrink Talebi</strong>
+            <span>Log dosyası doluluğu tespit edildiğinde öncelikli aksiyon izleme ekibine shrink işlemi için bildirim yapmaktır. Log backup zinciri kırılmadan shrink uygulanmalıdır.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">2</div>
+        <div class="step-body">
+            <strong>Disk Yoksa Disk Ekle ve İlet</strong>
+            <span>Shrink için alan yoksa veya shrink yeterli gelmeyecekse, disk ekleme işlemi yapılır ve durum izleme ekibine iletilir.</span>
+        </div>
+    </div>
+</div>
+
+<div class="callout">
+    <strong>💡 Not:</strong> Log dosyası shrink işlemi dikkatli yapılmalıdır. Full Recovery modundaki bir veritabanında log truncate edilmeden shrink etkisiz kalır. İzleme ekibi log backup zincirini kontrol etmeden müdahale etmemelidir.
+</div>
+
+<h3>4. MDF ve NDF (Data Dosyaları) Doluluğu</h3>
+<p>Birincil veri dosyası (MDF) ve ikincil veri dosyaları (NDF) doğrudan veritabanı verilerini barındırır. Bu dosyalara müdahale en kritik senaryodur.</p>
+
+<div class="callout warning">
+    <strong>⚠️ Kritik Kural:</strong> MDF ve NDF dosyalarında kesinlikle silme yapılmaz. Bu dosyalar veritabanının kendisidir; herhangi bir silme işlemi kalıcı veri kaybına neden olur.
+</div>
+
+<div class="step-grid">
+    <div class="step-item">
+        <div class="step-num">1</div>
+        <div class="step-body">
+            <strong>Müşteriye Mail Gönder</strong>
+            <span>Durum müşteriye açıkça bildirilir: hangi veritabanı, ne kadar dolu, mevcut alan.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">2</div>
+        <div class="step-body">
+            <strong>Disk Ekleme Önerisini Sun</strong>
+            <span>Hedef: diskte yaklaşık <strong>%20 boş alan</strong> kalacak şekilde ek kapasite eklenmesi. Bu oran ani büyümelere karşı tampon sağlar.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">3</div>
+        <div class="step-body">
+            <strong>Onay Sonrası Disk Ekle</strong>
+            <span>Müşteri onayı alındıktan sonra ilgili volume'e disk eklenir. İşlem sonrası durum doğrulanır.</span>
+        </div>
+    </div>
+</div>
+
+<h3>5. HPOMI ile Disk Büyüme Trendi Analizi</h3>
+<p>Anlık doluluk oranının yanı sıra büyüme trendini görmek, gelecekteki disk taleplerini planlamak açısından kritiktir. HPOMI üzerinden ilgili sunucu seçilerek son <strong>6 aylık disk kullanım grafiği</strong> ekran görüntüsü alınır ve müşteriye iletilen rapora eklenir. Bu grafik; büyüme hızını, dönemsel artışları ve disk ekleme zamanlamasını görselleştirir.</p>
+
+<h3>6. TempDB Doluluğu</h3>
+<p>TempDB, SQL Server'ın geçici işlemler için kullandığı sistem veritabanıdır. Büyük sıralama operasyonları, karmaşık sorgular veya uzun süreli işlemler TempDB'yi doldurabilir. TempDB'ye shrink uygulamak veri kaybına neden olmaz çünkü içeriği geçicidir.</p>
+
+<p>TempDB shrink için iki yöntem kullanılabilir:</p>
+
+<h4>Yöntem 1 — GUI ile Shrink</h4>
+<p>SQL Server Management Studio üzerinden ilgili veritabanına sağ tıkla → <strong>Tasks → Shrink → Files</strong> yolunu izle. File Type olarak <em>Data</em> seç ve shrink işlemini başlat.</p>
+
+<h4>Yöntem 2 — T-SQL ile Shrink</h4>
+<div class="code-block"><pre>DBCC FREEPROCCACHE
+GO
+USE [tempdb]
+GO
+DBCC SHRINKFILE (N'tempdev' , 1)
+GO</pre></div>
+
+<div class="callout">
+    <strong>💡 Birden Fazla TempDB Dosyası:</strong> TempDB birden fazla data dosyasına sahipse her biri ayrı ayrı shrink edilmelidir. Dosya adları <code>tempdev</code>, <code>tempdev1</code>, <code>tempdev2</code>... şeklinde devam eder. Her biri için <code>DBCC SHRINKFILE</code> komutunu sırayla çalıştır.
+</div>
+
+<h3>7. Sistem Doluluğu (C Diski)</h3>
+<p>İşletim sistemi diski dolduğunda SQL Server servisleri log yazamaz, Windows Event Log çalışmaz ve sistem kararsızlaşır. Hızlı analiz için:</p>
+
+<div class="step-grid">
+    <div class="step-item">
+        <div class="step-num">1</div>
+        <div class="step-body">
+            <strong>Alanı Analiz Et</strong>
+            <span>Linux tabanlı sistemlerde <code>df -h</code> komutuyla genel doluluk, Windows'ta <strong>TreeSize Free</strong> ile hangi dizinin alan kapladığı tespit edilir.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">2</div>
+        <div class="step-body">
+            <strong>Müşteriye Bildir</strong>
+            <span>Durum ve tespit edilen büyük dosya/dizin bilgisi müşteriye mail ile iletilir.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">3</div>
+        <div class="step-body">
+            <strong>İnsiyatif Al</strong>
+            <span>Geçici log, dump veya temp dosyaları gibi silinmesi güvenli olan dosyalar için müşteri onayı beklenmeksizin insiyatif alınabilir. Kritik olmayan dosyalar temizlenir ve durum raporlanır.</span>
+        </div>
+    </div>
+</div>
+
+<h2>Oracle (UNIX) Disk Doluluğu Senaryoları</h2>
+
+<p>Oracle veritabanlarının UNIX ortamlarında oluşturduğu dosyalar belirli dizin yapısına göre yönetilir. Her dizin tipi için farklı müdahale kuralları vardır.</p>
+
+<div class="callout">
+    <strong>💡 Genel Başlangıç Komutları:</strong> Herhangi bir Oracle disk doluluğu müdahalesine başlamadan önce aşağıdaki sırayla ortam hazırlanır: hangi Oracle instance'larının çalıştığı tespit edilir, ilgili instance için oracle kullanıcısına geçilir, environment set edilir ve sqlplus ile bağlanılır.
+</div>
+
+<h3>1. ARCHİVE Log Doluluğu Temizleme</h3>
+<p>Oracle'ın archive log dizini dolduğunda veritabanı yeni işlem yapamaz hale gelir. Bu en acil senaryolardan biridir.</p>
+
+<p>Önce ortamı hazırla ve durumu analiz et:</p>
+<div class="code-block"><pre>sudo du -akx /archive_dizin | sort -rn | head -50
+df -h
+ps -ef | grep pmon</pre></div>
+
+<p>Oracle kullanıcısına geçerek sqlplus'a bağlan:</p>
+<div class="code-block"><pre>sudo su - oracle
+. oraenv
+sqlplus / as sysdba
+archive log list;</pre></div>
+
+<div class="step-grid">
+    <div class="step-item">
+        <div class="step-num">1</div>
+        <div class="step-body">
+            <strong>Archive Log Listesini Kontrol Et</strong>
+            <span><code>archive log list;</code> çıktısından hangi sequence'ların biriktiği ve arşiv dizininin konumu öğrenilir.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">2</div>
+        <div class="step-body">
+            <strong>Backup Ortamına Bağlan</strong>
+            <span>Archive loglar aktif backup ortamına (RMAN veya ilgili backup sunucusu) bağlanarak temizlenmesi sağlanır.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">3</div>
+        <div class="step-body">
+            <strong>ARCH Job'ı Başlat</strong>
+            <span>Backup ortamında ARCH (Archive) job'ı manuel olarak başlatılır. Job tamamlandığında archive loglar backup'a taşınır ve kaynak dizinden temizlenir.</span>
+        </div>
+    </div>
+</div>
+
+<div class="callout warning">
+    <strong>⚠️ Dikkat:</strong> Archive loglar RMAN kaydı olmadan doğrudan işletim sistemi seviyesinde silinmez. Aksi halde database recovery zinciri kırılır ve olası bir kurtarma senaryosunda veriye ulaşılamaz.
+</div>
+
+<h3>2. ADUMP (.aud Dosyaları) Temizleme</h3>
+<p>Oracle audit mekanizmasının ürettiği .aud dosyaları zamanla büyük hacme ulaşabilir. Bu dosyalar belirli yaşı geçenler silinebilir.</p>
+
+<p>Önce audit dizinini ve doluluk durumunu öğren:</p>
+<div class="code-block"><pre>show parameter audit;
+cd /audit_dizin
+du -sh</pre></div>
+
+<p>7 günden eski .aud dosyalarını sil:</p>
+<div class="code-block"><pre>find /audit_dizin -name "*.aud" -mtime +7 -exec rm {} \;</pre></div>
+
+<div class="callout">
+    <strong>💡 Not:</strong> <code>-mtime +7</code> parametresi son 7 günden eski dosyaları hedefler. Saklama politikasına göre bu süre değiştirilebilir; ancak en az son 7 günlük audit kaydı korunmalıdır.
+</div>
+
+<h3>3. BDUMP (.trc Trace Dosyaları) Temizleme</h3>
+<p>Background dump dizinindeki .trc trace dosyaları da zaman içinde birikir. Belirli bir yaşı geçen trace dosyaları silinebilir.</p>
+
+<p>Önce background dump dizinini öğren:</p>
+<div class="code-block"><pre>show parameter background;</pre></div>
+
+<p>7 günden eski .trc dosyalarını sil:</p>
+<div class="code-block"><pre>find /background_dump_dizin -name "*.trc" -mtime +7 -exec rm {} \;</pre></div>
+
+<h3>4. CDUMP (.trm Dosyaları) Temizleme</h3>
+<p>Core dump dizinindeki .trm dosyaları (trace map dosyaları) güvenle temizlenebilir. Bu dosyalar yalnızca trace yönetim meta verilerini içerir ve silinmesi veritabanını etkilemez. Dizindeki tüm .trm dosyaları silinebilir.</p>
+
+<h3>5. Alert Log Dosyaları</h3>
+<p>Alert log, Oracle veritabanının tüm kritik olaylarını, hataları ve başlatma/kapatma kayıtlarını barındırır. Bu dosya bir veritabanının hafızasıdır.</p>
+
+<div class="callout warning">
+    <strong>⚠️ Kritik Kural — Alert Log ASLA Silinmez:</strong> Alert log dosyası kesinlikle silinemez. Bu dosyanın silinmesi geçmiş hata kayıtlarını, instance başlatma geçmişini ve kritik uyarıları kalıcı olarak yok eder. Sorun giderme ve audit açısından bu kayıtlar vazgeçilmezdir.
+</div>
+
+<p>Alert log büyüdüğünde çözüm silmek değil, sıkıştırmaktır:</p>
+<div class="code-block"><pre>gzip -p /alert_log_dosyasi</pre></div>
+
+<p>Sıkıştırma işlemi sonrasında Oracle yeni bir alert log dosyası oluşturur. Eski kayıtlar .gz formatında arşivlenerek korunmuş olur.</p>
+
+<h2>Müdahale Özet Tablosu</h2>
+
+<table class="compare-table">
+    <tr><th>Senaryo</th><th>Müdahale</th><th>Silme İzni</th></tr>
+    <tr>
+        <td>MS Filesystem doluluğu</td>
+        <td>LOG kapat, disk ekle</td>
+        <td class="tag-green">Duruma göre</td>
+    </tr>
+    <tr>
+        <td>.BAK dosyaları</td>
+        <td>TreeSize analiz, müşteri onayı al</td>
+        <td class="tag-red">Yalnızca müşteri onayıyla</td>
+    </tr>
+    <tr>
+        <td>.LDF (LOG) doluluğu</td>
+        <td>İzleme ekibine shrink, disk ekle</td>
+        <td class="tag-red">Hayır — shrink yapılır</td>
+    </tr>
+    <tr>
+        <td>MDF / NDF data dosyaları</td>
+        <td>Müşteriye mail, disk ekle (%20 boş hedef)</td>
+        <td class="tag-red">Kesinlikle hayır</td>
+    </tr>
+    <tr>
+        <td>TempDB doluluğu</td>
+        <td>GUI veya T-SQL shrink</td>
+        <td class="tag-green">Evet — veri geçici</td>
+    </tr>
+    <tr>
+        <td>C Diski (Sistem)</td>
+        <td>df -h / TreeSize, mail, insiyatif al</td>
+        <td class="tag-green">Geçici dosyalar için evet</td>
+    </tr>
+    <tr>
+        <td>Oracle ARCHİVE</td>
+        <td>Backup ortamı bağlantısı, ARCH job başlat</td>
+        <td class="tag-red">RMAN dışı silme yapılmaz</td>
+    </tr>
+    <tr>
+        <td>Oracle ADUMP (.aud)</td>
+        <td>+7 gün eskiler silinebilir</td>
+        <td class="tag-green">Evet (yaşa göre)</td>
+    </tr>
+    <tr>
+        <td>Oracle BDUMP (.trc)</td>
+        <td>+7 gün eskiler silinebilir</td>
+        <td class="tag-green">Evet (yaşa göre)</td>
+    </tr>
+    <tr>
+        <td>Oracle CDUMP (.trm)</td>
+        <td>Tümü silinebilir</td>
+        <td class="tag-green">Evet — tamamı</td>
+    </tr>
+    <tr>
+        <td>Oracle Alert Log</td>
+        <td>Sıkıştır (gzip), asla silme</td>
+        <td class="tag-red">Kesinlikle hayır</td>
+    </tr>
+</table>
+
+<div class="callout">
+    <strong>✅ Genel Müdahale Prensibi:</strong> Disk doluluğu senaryolarında önce analiz, sonra müşteri bildirimi, ardından onay veya insiyatif değerlendirmesi yapılır. Veri içeren hiçbir dosya (MDF, NDF, LDF, Archive Log, Alert Log) onaysız ve prosedür dışı silinmez. Her aksiyon sonrasında doluluk oranı tekrar kontrol edilerek sonuç raporlanır.
+</div>

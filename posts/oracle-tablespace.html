@@ -1,0 +1,226 @@
+
+<span class="article-tag">Linux · Oracle DB</span>
+<h1>Oracle Tablespace Doluluk Yönetimi: UNIX ve Windows Ortamında Adım Adım Rehber</h1>
+<div class="article-meta-row">
+    <span>📅 19 Şubat 2026</span>
+    <span>⏱ 10 dk okuma</span>
+    <span>✍️ Burak Pehlivanoğlu</span>
+</div>
+
+<p>Oracle veritabanlarında tablespace doluluğu, uygulamaların veri yazamamasına ve kritik servislerin durmasına neden olan önemli bir operasyonel sorundur. Tablespace doluluk yönetimi; doğru sorgu ile doluluk oranının tespit edilmesi, ilgili datafile konumunun bulunması ve kalıcı çözüm olarak alan eklenmesi adımlarından oluşur. Bu rehberde UNIX ve Windows ortamlarında müdahale sürecini adım adım ele alacağız.</p>
+
+<h2>UNIX Ortamında Tablespace Yönetimi</h2>
+
+<h3>1. Oracle Instance Tespiti</h3>
+<p>Müdahaleye başlamadan önce sunucuda hangi Oracle instance'larının çalıştığı tespit edilmelidir. Bu bilgi hem doğru SID'in seçilmesini hem de yanlış instance'a bağlanma riskinin önlenmesini sağlar.</p>
+
+<div class="code-block"><pre>ps -ef | grep pmon</pre></div>
+
+<p>Çıktıda <code>ora_pmon_SID</code> formatında satırlar görünür. Her satır çalışan bir Oracle instance'ını temsil eder. Müdahale edilecek instance'ın SID değeri buradan alınır.</p>
+
+<h3>2. Oracle Kullanıcısına Geçiş ve Bağlantı</h3>
+<p>UNIX ortamında Oracle yönetimi oracle OS kullanıcısı üzerinden yapılır. Root veya başka bir kullanıcıyla sqlplus'a bağlanmak hem yetki sorunlarına hem de environment hatalarına neden olabilir.</p>
+
+<div class="step-grid">
+    <div class="step-item">
+        <div class="step-num">1</div>
+        <div class="step-body">
+            <strong>Oracle Kullanıcısına Geç</strong>
+            <span><code>sudo su - oracle</code> komutuyla oracle kullanıcısına geçilir. Tire (<code>-</code>) işareti home directory ve environment'ın tam olarak yüklenmesini sağlar.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">2</div>
+        <div class="step-body">
+            <strong>Oracle Environment'ı Set Et</strong>
+            <span><code>. oraenv</code> komutu çalıştırılır. Hangi SID'e bağlanılacağı sorulur; <code>ps -ef | grep pmon</code> ile tespit edilen SID değeri girilir. ORACLE_HOME ve PATH otomatik olarak ayarlanır.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">3</div>
+        <div class="step-body">
+            <strong>sqlplus ile Bağlan</strong>
+            <span><code>sqlplus / as sysdba</code> komutuyla veritabanına SYSDBA yetkisiyle bağlanılır. DBA işlemleri için bu yetki seviyesi gereklidir.</span>
+        </div>
+    </div>
+</div>
+
+<div class="code-block"><pre>sudo su - oracle
+. oraenv
+sqlplus / as sysdba</pre></div>
+
+<h3>3. Tablespace Doluluk Sorgusu</h3>
+<p>sqlplus bağlantısı kurulduktan sonra tüm tablespace'lerin doluluk oranları tek bir sorguyla listelenir. Sorgu; mevcut alan, autoextend kapasitesi ve boş alanı birleştirerek gerçekçi doluluk yüzdesi hesaplar ve en dolu tablespace'ler en üstte görünecek şekilde sıralar.</p>
+
+<div class="code-block"><pre>SELECT d.tablespace_name AD,
+    ROUND(NVL((a.bytes - NVL(f.bytes, 0))/(a.bytes + NVL(a.artacak, 0))*100, 0), 2) ORAN
+FROM sys.dba_tablespaces d,
+    (SELECT tablespace_name, SUM(bytes) bytes,
+            SUM(DECODE(autoextensible,'YES',MAXbytes-bytes,0)) artacak
+       FROM dba_data_files GROUP BY tablespace_name) a,
+    (SELECT tablespace_name, SUM(bytes) bytes
+       FROM dba_free_space GROUP BY tablespace_name) f
+WHERE d.tablespace_name = a.tablespace_name(+)
+  AND d.tablespace_name = f.tablespace_name(+)
+UNION ALL
+SELECT d.tablespace_name AD,
+    ROUND(NVL((a.bytes - NVL(f.bytes, 0))/(a.bytes)*100, 0), 2) ORAN
+FROM sys.dba_tablespaces d,
+    (SELECT tablespace_name, SUM(bytes) bytes
+       FROM dba_temp_files GROUP BY tablespace_name) a,
+    (SELECT tablespace_name, SUM(bytes_free) bytes
+       FROM v$temp_space_header GROUP BY tablespace_name) f
+WHERE d.tablespace_name = a.tablespace_name(+)
+  AND d.tablespace_name = f.tablespace_name(+)
+ORDER BY ORAN ASC;</pre></div>
+
+<div class="callout">
+    <strong>💡 Sorgu Çıktısını Yorumlama:</strong> Çıktıdaki ORAN sütunu doluluk yüzdesini gösterir. <strong>%80 ve üzeri</strong> değerler müdahale eşiğidir. Sorgu autoextend kapasitesini de hesaba katar; bu sayede "yazılı olarak dolu ama otomatik genişleyebilir" tablespace'ler gerçek doluluk oranıyla gösterilir.
+</div>
+
+<h3>4. Tablespace Konumunu Öğrenme</h3>
+<p>Dolu tablespace tespit edildikten sonra datafile'larının hangi dizinde veya disk grubunda yer aldığı belirlenir. Bu bilgi hem disk ekleme adımı için hem de ASM ortamlarında doğru disk grubuna yönlendirme için gereklidir.</p>
+
+<div class="code-block"><pre>SELECT tablespace_name, file_name
+FROM dba_data_files
+WHERE tablespace_name IN ('DOLU_TABLESPACE_ADI');</pre></div>
+
+<p>Çıktıdaki <code>file_name</code> sütununda ASM ortamlarında <code>+DATA/...</code>, dosya sistemi ortamlarında ise gerçek dizin yolu görünür.</p>
+
+<h3>5. Tablespace'e Alan Ekleme</h3>
+<p>Konum bilgisi alındıktan sonra <code>ALTER TABLESPACE</code> komutuyla yeni bir datafile eklenerek tablespace'e alan kazandırılır. Autoextend yapılandırması ile dosya ihtiyaç halinde belirlenen üst sınıra kadar otomatik büyür.</p>
+
+<div class="code-block"><pre>ALTER TABLESPACE DOLU_TABLESPACE_ADI
+ADD DATAFILE '+DATA' SIZE 100M
+AUTOEXTEND ON NEXT 100M MAXSIZE 32767M;</pre></div>
+
+<div class="callout">
+    <strong>💡 MAXSIZE 32767M:</strong> Bu değer Oracle'ın single datafile için desteklediği maksimum boyuta (32 GB - 1 MB) karşılık gelir. Daha küçük üst sınır koymak istenirse MAXSIZE değeri düşürülebilir. Ancak çok küçük bir MAXSIZE belirlenmesi kısa süre içinde tekrar doluluk alarmı üretir.
+</div>
+
+<h3>6. Vektör Sunucular için Standart Parametreler</h3>
+<p>Vektör sunucularda belirli tablespace'ler için standart büyüme parametreleri belirlenmiştir. Bu sunuculara alan eklenirken aşağıdaki değerler esas alınır:</p>
+
+<table class="compare-table">
+    <tr><th>Tablespace</th><th>Autoextend</th><th>Maxsize</th></tr>
+    <tr>
+        <td>ASSET_INFO_INDEX_TS</td>
+        <td>128M</td>
+        <td class="tag-green">30G</td>
+    </tr>
+    <tr>
+        <td>ASSET_INFO_TS</td>
+        <td>128M</td>
+        <td class="tag-green">30G</td>
+    </tr>
+    <tr>
+        <td>VTSPWHUSER_TS</td>
+        <td>128M</td>
+        <td class="tag-green">30G</td>
+    </tr>
+</table>
+
+<div class="callout warning">
+    <strong>⚠️ Dikkat:</strong> Vektör sunucularda bu standart değerlerin dışına çıkmadan önce müşteri veya sistem sorumlusuyla mutabakat sağlanmalıdır. Özellikle MAXSIZE değerinin yükseltilmesi disk kapasitesi planlamasını etkiler.
+</div>
+
+<h2>Windows Ortamında Tablespace Yönetimi</h2>
+
+<p>Windows ortamında Oracle bağlantısı kurulum yolu ve ortam değişkenlerinin farklı yapısı nedeniyle UNIX'ten ayrışır. Ancak sqlplus'a bağlandıktan sonraki tablespace sorgulama ve alan ekleme adımları aynıdır.</p>
+
+<h3>1. Oracle SID Tespiti</h3>
+<p>Windows ortamında çalışan Oracle instance'larını bulmak için servis yöneticisi kullanılır. <strong>services.msc</strong> açılarak <code>OracleService</code> ile başlayan servisler incelenir. Servis adı <code>OracleServiceSID</code> formatındadır; SID kısmı bağlantı için gerekli değerdir.</p>
+
+<div class="callout">
+    <strong>💡 Örnek:</strong> Servis adı <code>OracleServiceKSP</code> ise SID değeri <code>KSP</code>'dir.
+</div>
+
+<h3>2. Ortam Değişkenlerini Set Et ve Bağlan</h3>
+<p>Windows komut satırında Oracle bağlantısı için iki ortam değişkeni tanımlanması gerekir. ORACLE_SID hedef instance'ı, ORACLE_HOME ise sqlplus binary'sinin bulunduğu dizini belirtir.</p>
+
+<div class="step-grid">
+    <div class="step-item">
+        <div class="step-num">1</div>
+        <div class="step-body">
+            <strong>SID ve HOME Değişkenlerini Tanımla</strong>
+            <span>services.msc'den tespit edilen SID değeri ve Oracle kurulum yolu tanımlanır. Kurulum yolu standart değilse <code>ORACLE_HOME</code> dizini ORACLE kurulumuyla doğrulanmalıdır.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">2</div>
+        <div class="step-body">
+            <strong>Listener Durumunu Kontrol Et</strong>
+            <span><code>lsnrctl status</code> komutuyla listener servisinin çalışıp çalışmadığı ve hangi instance'ları dinlediği doğrulanır.</span>
+        </div>
+    </div>
+    <div class="step-item">
+        <div class="step-num">3</div>
+        <div class="step-body">
+            <strong>sqlplus ile Bağlan</strong>
+            <span><code>sqlplus / as sysdba</code> komutuyla bağlantı sağlanır. Bu noktadan sonra UNIX ortamıyla aynı sorgular ve yönetim adımları uygulanır.</span>
+        </div>
+    </div>
+</div>
+
+<div class="code-block"><pre>SET ORACLE_SID=KSP
+SET ORACLE_HOME=e:\oracle\ksp\12102\bin\
+lsnrctl status
+sqlplus / as sysdba</pre></div>
+
+<div class="callout warning">
+    <strong>⚠️ PATH Dikkat:</strong> <code>ORACLE_HOME</code> değişkeni <code>bin\</code> dizinini de içermeli veya <code>PATH</code>'e eklenmelidir. Aksi halde <code>lsnrctl</code> ve <code>sqlplus</code> komutları <em>"tanınmayan komut"</em> hatası verir.
+</div>
+
+<h2>UNIX ve Windows Ortam Karşılaştırması</h2>
+
+<table class="compare-table">
+    <tr><th>Adım</th><th>UNIX</th><th>Windows</th></tr>
+    <tr>
+        <td>Instance tespiti</td>
+        <td><code>ps -ef | grep pmon</code></td>
+        <td>services.msc → OracleService*</td>
+    </tr>
+    <tr>
+        <td>Kullanıcı geçişi</td>
+        <td><code>sudo su - oracle</code></td>
+        <td>Komut satırı (yönetici)</td>
+    </tr>
+    <tr>
+        <td>Environment set</td>
+        <td><code>. oraenv</code></td>
+        <td><code>SET ORACLE_SID / ORACLE_HOME</code></td>
+    </tr>
+    <tr>
+        <td>Listener kontrol</td>
+        <td><code>lsnrctl status</code></td>
+        <td><code>lsnrctl status</code></td>
+    </tr>
+    <tr>
+        <td>DB bağlantısı</td>
+        <td><code>sqlplus / as sysdba</code></td>
+        <td><code>sqlplus / as sysdba</code></td>
+    </tr>
+    <tr>
+        <td>Tablespace sorgulama</td>
+        <td class="tag-green">Aynı SQL sorgusu</td>
+        <td class="tag-green">Aynı SQL sorgusu</td>
+    </tr>
+    <tr>
+        <td>Alan ekleme</td>
+        <td class="tag-green">Aynı ALTER TABLESPACE</td>
+        <td class="tag-green">Aynı ALTER TABLESPACE</td>
+    </tr>
+</table>
+
+<div class="callout">
+    <strong>✅ Tablespace Müdahale Özeti:</strong>
+    <ul style="margin-top:0.5rem;">
+        <li>Instance tespiti yapıldı mı? (<code>pmon</code> / services.msc)</li>
+        <li>Doğru oracle kullanıcısı / ortam değişkenleriyle bağlantı kuruldu mu?</li>
+        <li>Doluluk sorgusu çalıştırılarak kritik tablespace belirlendi mi?</li>
+        <li>Datafile konumu (<code>dba_data_files</code>) öğrenildi mi?</li>
+        <li>Alan ekleme komutu doğru SID ve doğru disk grubuyla çalıştırıldı mı?</li>
+        <li>İşlem sonrası doluluk sorgusu tekrar çalıştırılarak alan doğrulandı mı?</li>
+        <li>Vektör sunucularda standart parametreler (128M / 30G) kullanıldı mı?</li>
+    </ul>
+</div>

@@ -1,0 +1,157 @@
+<span class="article-tag">Linux · LVM / Storage</span>
+                <h1>Linux'ta LVM ile Disk Ekleme: pvcreate'den fstab'a Adım Adım Rehber</h1>
+                <div class="article-meta-row">
+                    <span>📅 15 Şubat 2026</span>
+                    <span>⏱ 8 dk okuma</span>
+                    <span>✍️ Burak Pehlivanoğlu</span>
+                </div>
+
+                <p>Linux üzerinde yeni bir disk ekleyip production'a hazır hale getirmek birkaç adımdan oluşur. LVM (Logical Volume Manager) bu süreci esnek ve yönetilebilir kılar: fiziksel diski bir volume group'a ekler, üzerinde logical volume oluşturur ve sisteme mount edersiniz. Bu rehberde <code>/dev/sdb</code> diskini <code>/data</code> mount noktasına bağlamayı ve kurulumu kalıcı hale getirmeyi adım adım gösteriyorum.</p>
+
+                <div class="callout">
+                    <strong>ℹ️ Ön Bilgi:</strong> Bu rehberdeki adımlar RHEL, CentOS ve türevlerinde test edilmiştir. Disk eklenmiş ve işletim sistemince görünür durumda olmalıdır. Diskin mevcut olup olmadığını <code>lsblk</code> ile doğrulayın.
+                </div>
+
+                <h2>Genel İş Akışı</h2>
+                <div class="step-grid">
+                    <div class="step-item">
+                        <div class="step-num">1</div>
+                        <div class="step-body">
+                            <strong>Diski Görüntüle</strong>
+                            <span><code>lsblk</code> ile yeni eklenen diskin sistem tarafından tanındığını doğrula.</span>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">2</div>
+                        <div class="step-body">
+                            <strong>Physical Volume (PV) Oluştur</strong>
+                            <span><code>pvcreate</code> ile diski LVM için hazırla.</span>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">3</div>
+                        <div class="step-body">
+                            <strong>Volume Group (VG) Oluştur</strong>
+                            <span><code>vgcreate</code> ile PV'yi bir volume group'a dahil et.</span>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">4</div>
+                        <div class="step-body">
+                            <strong>Logical Volume (LV) Oluştur</strong>
+                            <span><code>lvcreate</code> ile VG üzerinde mantıksal birim oluştur.</span>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">5</div>
+                        <div class="step-body">
+                            <strong>Formatla</strong>
+                            <span><code>mkfs.xfs</code> ile LV üzerinde dosya sistemi oluştur.</span>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">6</div>
+                        <div class="step-body">
+                            <strong>Mount Et ve Kalıcı Hale Getir</strong>
+                            <span>Mount noktası oluştur, <code>mount</code> ile bağla, <code>/etc/fstab</code>'a ekle.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <h2>Komutlar: /data için Tam Uygulama</h2>
+                <div class="code-block"><pre># 1. Diskleri listele - /dev/sdb'nin göründüğünü doğrula
+lsblk
+
+# 2. Fiziksel volume oluştur
+sudo pvcreate /dev/sdb
+# Beklenen çıktı: Physical volume "/dev/sdb" successfully created.
+
+# 3. Volume group oluştur
+sudo vgcreate vg_data /dev/sdb
+# Beklenen çıktı: Volume group "vg_data" successfully created
+
+# 4. Logical volume oluştur (tüm alanı kullan)
+sudo lvcreate -l 100%FREE -n lv_data vg_data
+# Beklenen çıktı: Logical volume "lv_data" created.
+
+# 5. XFS dosya sistemi oluştur
+sudo mkfs.xfs /dev/vg_data/lv_data
+
+# 6. Mount noktası oluştur
+sudo mkdir /data
+
+# 7. Diski bağla
+sudo mount /dev/vg_data/lv_data /data
+
+# 8. Kalıcı hale getir - fstab'ı düzenle
+vi /etc/fstab
+# Şu satırı ekle:
+# /dev/mapper/vg_data-lv_data  /data  xfs  defaults  0 0
+
+# 9. fstab'ı test et (hata yoksa çıktı vermez)
+mount -a</pre></div>
+
+                <div class="callout">
+                    <strong>✅ Kontrol:</strong> <code>mount -a</code> çıktı vermeden tamamlanırsa konfigürasyon doğrudur. <code>df -h | grep data</code> ile mount'u doğrulayabilirsiniz.
+                </div>
+
+                <h2>Örnek 2: WSO2 için Disk Ekleme</h2>
+                <p>Aynı süreci farklı bir uygulama için uygulamak da aynı adımları izler; sadece isimler değişir:</p>
+                <div class="code-block"><pre># Volume group oluştur
+sudo vgcreate vg_wso2 /dev/sdb
+
+# Logical volume oluştur
+sudo lvcreate -l 100%FREE -n lv_wso2 vg_wso2
+
+# XFS ile formatla
+sudo mkfs.xfs /dev/vg_wso2/lv_wso2
+
+# Mount noktası oluştur ve bağla
+sudo mkdir /wso2
+sudo mount /dev/vg_wso2/lv_wso2 /wso2
+
+# /etc/fstab'a şu satırı ekle:
+# /dev/mapper/vg_wso2-lv_wso2  /wso2  xfs  defaults  0 0
+
+# Test et
+mount -a</pre></div>
+
+                <h2>UUID ile fstab Kullanımı (Alternatif)</h2>
+                <p>Device path yerine UUID kullanmak daha güvenlidir; disk isimleri değişse bile mount çalışmaya devam eder.</p>
+                <div class="code-block"><pre># Diskin UUID'sini öğren
+blkid /dev/vg_data/lv_data
+# Örnek çıktı: /dev/mapper/vg_data-lv_data: UUID="a1b2c3d4-..." TYPE="xfs"
+
+# fstab'a UUID ile ekle:
+UUID=a1b2c3d4-e5f6-7890-abcd-ef1234567890  /data  xfs  defaults  0 0</pre></div>
+
+                <h2>Logical Volume Yeniden Adlandırma</h2>
+                <p>Mevcut bir LV'yi yeniden adlandırmak gerektiğinde yalnızca <code>lvrename</code> yeterli değildir; fstab ve aktif mount da güncellenmelidir.</p>
+                <div class="code-block"><pre># 1. LV'yi yeniden adlandır
+sudo lvrename /dev/vg_data/lv_01 /dev/vg_data/lv_data
+
+# 2. fstab'daki eski adı yenisiyle güncelle
+vi /etc/fstab
+# /dev/mapper/vg_data-lv_01 → /dev/mapper/vg_data-lv_data
+
+# 3. Tüm mount'ları yeniden yükle
+mount -a</pre></div>
+
+                <h2>Diğer Yararlı LVM Komutları</h2>
+                <table class="cmd-table">
+                    <thead>
+                        <tr><th>Komut</th><th>Açıklama</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>vgs</code></td><td>Volume group'ları ve özetlerini listele</td></tr>
+                        <tr><td><code>pvs</code></td><td>Physical volume'leri listele</td></tr>
+                        <tr><td><code>lvs</code></td><td>Logical volume'leri listele</td></tr>
+                        <tr><td><code>lvscan</code></td><td>Sistemdeki tüm LV'leri tara ve durumlarını göster</td></tr>
+                        <tr><td><code>vgdisplay vg_data</code></td><td>Volume group detaylarını göster (toplam/boş alan vs.)</td></tr>
+                        <tr><td><code>lvdisplay</code></td><td>LV detaylarını göster</td></tr>
+                    </tbody>
+                </table>
+
+                <div class="callout">
+                    <strong>⚠️ Dikkat:</strong> <code>/etc/fstab</code> dosyasına hatalı bir satır eklerseniz, sunucu bir sonraki reboot'ta maintenance mode'a düşer. Bu durumda root şifresiyle sisteme girip ilgili satırı kaldırmanız gerekir. <code>mount -a</code> ile önceden test etmek bu riski önemli ölçüde azaltır. Reboot genellikle gerekmez; <code>mount -a</code> yeterlidir.
+                </div>
