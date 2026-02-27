@@ -25,18 +25,45 @@
     }, { threshold: 0.08 });
 
     // ================================================================
+    //  TARİH YARDIMCISI — Türkçe tarih string'ini Date'e çevirir
+    // ================================================================
+    const _MONTHS = { 'Ocak':0,'Şubat':1,'Mart':2,'Nisan':3,'Mayıs':4,
+                      'Haziran':5,'Temmuz':6,'Ağustos':7,'Eylül':8,
+                      'Ekim':9,'Kasım':10,'Aralık':11 };
+    function _parseDate(s) {
+        const [d, m, y] = s.split(' ');
+        return new Date(+y, _MONTHS[m] ?? 0, +d);
+    }
+
+    // Sıralanmış allPosts (en yeni önce) — diğer fonksiyonlar da kullanır
+    function _sortedPosts() {
+        if (typeof allPosts === 'undefined') return [];
+        return [...allPosts].sort((a, b) => _parseDate(b.date) - _parseDate(a.date));
+    }
+
+    // ================================================================
     //  KART RENDER — allPosts'tan otomatik üret, index.html'e elle
     //  kart HTML'i eklemeye gerek kalmaz.
+    //  Ana sayfada en güncel 7 yazı gösterilir.
+    //  makaleler.html'de (id="allPostsPage" olan) tümü gösterilir.
     // ================================================================
     function renderCards() {
         const grid = document.getElementById('postsGrid');
         if (!grid || typeof allPosts === 'undefined') return;
 
-        // Hero makale sayacını güncelle
+        const sorted  = _sortedPosts();
+        const isAll   = !!document.getElementById('allPostsPage');
+        const posts   = isAll ? sorted : sorted.slice(0, 7);
+
+        // Hero makale sayacını güncelle (sadece index)
         const stat = document.querySelector('.hero-stats .hero-stat:first-child h3');
         if (stat) stat.textContent = allPosts.length;
 
-        allPosts.forEach(p => {
+        // Makaleler sayfasında toplam sayıyı göster
+        const counter = document.getElementById('postsTotalCount');
+        if (counter) counter.textContent = allPosts.length;
+
+        posts.forEach(p => {
             const card = document.createElement('article');
             card.className = 'post-card reveal';
             card.dataset.category = p.category;

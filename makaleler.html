@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tüm Yazılar | Burak Pehlivanoğlu</title>
+    <meta name="description" content="Sanallaştırma, VMware, Linux, Microsoft ve sistem mühendisliği üzerine tüm teknik makaleler.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://burakpehlivanoglu.pages.dev/makaleler.html">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://burakpehlivanoglu.pages.dev/makaleler.html">
+    <meta property="og:title" content="Tüm Yazılar | Burak Pehlivanoğlu">
+    <meta property="og:description" content="Sanallaştırma, VMware, Linux ve sistem mühendisliği üzerine tüm teknik makaleler.">
+    <meta property="og:image" content="https://burakpehlivanoglu.pages.dev/og-image.png">
+
+    <meta name="theme-color" content="#0a0a0f">
+
+    <!-- Favicon -->
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="shortcut icon" href="favicon.svg">
+
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/main.css">
+
+    <style>
+        /* Makaleler sayfasına özel stiller */
+        .all-posts-hero {
+            padding: 7rem 2rem 3rem;
+            text-align: center;
+            background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .all-posts-hero .breadcrumb {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 1.2rem;
+        }
+
+        .all-posts-hero .breadcrumb a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .all-posts-hero .breadcrumb a:hover { text-decoration: underline; }
+
+        .all-posts-hero h1 {
+            font-size: clamp(1.8rem, 4vw, 3rem);
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 0.6rem;
+        }
+
+        .all-posts-hero p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            margin: 0;
+        }
+
+        .all-posts-hero .posts-count-badge {
+            display: inline-block;
+            margin-top: 1.2rem;
+            padding: 0.4rem 1rem;
+            background: var(--accent-dim);
+            border: 1px solid var(--accent-mid);
+            border-radius: 999px;
+            color: var(--accent);
+            font-family: var(--font-mono);
+            font-size: 0.82rem;
+            font-weight: 600;
+        }
+
+        /* Filtre çubuğu */
+        .posts-filter-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 1.4rem 2rem;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 64px;
+            z-index: 50;
+            flex-wrap: wrap;
+        }
+
+        .filter-tags {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-tag {
+            padding: 0.35rem 0.9rem;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 0.78rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: var(--font-main);
+        }
+
+        .filter-tag:hover {
+            border-color: var(--accent-mid);
+            color: var(--accent);
+            background: var(--accent-dim);
+        }
+
+        .filter-tag.active {
+            border-color: var(--accent);
+            background: var(--accent-dim);
+            color: var(--accent);
+        }
+
+        .filter-search-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.4rem 0.9rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 0.82rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: var(--font-main);
+            white-space: nowrap;
+        }
+
+        .filter-search-btn:hover {
+            border-color: var(--accent-mid);
+            color: var(--accent);
+        }
+
+        .filter-search-btn kbd {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 0.1rem 0.3rem;
+            font-size: 0.7rem;
+        }
+
+        /* Ana grid */
+        .all-posts-section {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 3rem 2rem 5rem;
+        }
+
+        .all-posts-section .posts-grid {
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        }
+
+        /* Boş durum */
+        .no-results {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-muted);
+        }
+
+        .no-results .no-results-icon { font-size: 3rem; margin-bottom: 1rem; }
+        .no-results strong { display: block; font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 0.5rem; }
+
+        @media (max-width: 600px) {
+            .all-posts-hero { padding: 6rem 1.2rem 2.5rem; }
+            .posts-filter-bar { padding: 1rem 1.2rem; }
+            .all-posts-section { padding: 2rem 1.2rem 4rem; }
+        }
+    </style>
+</head>
+<body>
+<a href="#main-content" class="skip-link">İçeriğe geç</a>
+    <div class="progress-bar" id="progressBar" role="progressbar" aria-label="Sayfa kaydırma ilerlemesi"></div>
+
+    <!-- SEARCH OVERLAY -->
+    <div class="search-overlay" id="searchOverlay" role="dialog" aria-modal="true" aria-label="Yazı Ara">
+        <div class="search-box">
+            <div class="search-input-wrap">
+                <span class="search-input-icon">🔍</span>
+                <input type="search" id="searchInput" placeholder="Yazı, kategori veya konu ara..." autocomplete="off" aria-label="Arama">
+            </div>
+            <div class="search-hint">Kapatmak için <kbd>Esc</kbd> bas</div>
+            <div class="search-results" id="searchResults"></div>
+        </div>
+    </div>
+
+    <!-- MOBILE MENU -->
+    <div class="mobile-overlay" id="mobileOverlay" onclick="closeMobileMenu()"></div>
+    <nav class="mobile-menu" id="mobileMenu" aria-label="Mobil menü">
+        <button class="mobile-menu-close" onclick="closeMobileMenu()" aria-label="Menüyü kapat">✕</button>
+        <a href="index.html">Ana Sayfa</a>
+        <a href="index.html#kategoriler">Kategoriler</a>
+        <a href="index.html#hakkimda">Hakkımda</a>
+        <a href="index.html#bulten" style="color: var(--accent); border-color: var(--accent-mid); background: var(--accent-dim);">Abone Ol</a>
+    </nav>
+
+    <!-- TOAST -->
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <!-- SCROLL TO TOP -->
+    <button class="scroll-top" id="scrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Sayfanın başına git">↑</button>
+
+    <!-- NAVIGATION -->
+    <nav id="navbar" role="navigation" aria-label="Ana menü">
+        <a href="index.html" class="nav-logo" aria-label="burakpehlivanoglu - Ana sayfa">
+            <div class="nav-logo-icon" aria-hidden="true">BP</div>
+            <span class="nav-logo-text">burak<span>pehlivanoglu</span></span>
+        </a>
+        <ul class="nav-links" role="list">
+            <li><a href="index.html">Ana Sayfa</a></li>
+            <li><a href="index.html#kategoriler">Kategoriler</a></li>
+            <li><a href="index.html#hakkimda">Hakkımda</a></li>
+            <li>
+                <button class="nav-search-btn" onclick="openSearch()" aria-label="Yazı ara (Ctrl+K)">
+                    🔍 Ara <kbd>⌘K</kbd>
+                </button>
+            </li>
+            <li>
+                <button class="theme-toggle" onclick="toggleTheme()" aria-label="Tema değiştir" id="themeToggle">
+                    <div class="theme-toggle-icons"><span>🌙</span><span>☀️</span></div>
+                    <div class="theme-toggle-thumb" id="themeThumb">🌙</div>
+                </button>
+            </li>
+            <li><a href="index.html#bulten" class="nav-cta">Abone Ol</a></li>
+        </ul>
+        <div style="display:flex;align-items:center;gap:0.8rem;">
+            <button class="theme-toggle" onclick="toggleTheme()" aria-label="Tema değiştir" id="themeToggleMobile" style="display:none;">
+                <div class="theme-toggle-icons"><span>🌙</span><span>☀️</span></div>
+                <div class="theme-toggle-thumb">🌙</div>
+            </button>
+            <button class="mobile-menu-btn" onclick="openMobileMenu()" aria-label="Menüyü aç" aria-expanded="false" id="mobileMenuBtn">☰</button>
+        </div>
+    </nav>
+
+    <!-- ARTICLE MODAL -->
+    <div class="article-modal" id="articleModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="article-modal-backdrop" onclick="closeArticle()"></div>
+        <div class="article-modal-panel" id="articlePanel">
+            <button class="article-modal-close" onclick="closeArticle()" aria-label="Kapat">✕</button>
+            <div class="article-content" id="articleContent"></div>
+        </div>
+    </div>
+
+    <!-- HERO -->
+    <div class="all-posts-hero" id="main-content">
+        <div class="breadcrumb">
+            <a href="index.html">Ana Sayfa</a>
+            <span>/</span>
+            <span>Tüm Yazılar</span>
+        </div>
+        <h1>Tüm Yazılar</h1>
+        <p>Sanallaştırma, Linux, Microsoft ve sistem mühendisliği üzerine teknik makaleler</p>
+        <div class="posts-count-badge">
+            📄 <span id="postsTotalCount">…</span> makale
+        </div>
+    </div>
+
+    <!-- FİLTRE ÇUBUĞU -->
+    <div class="posts-filter-bar" role="navigation" aria-label="Kategori filtresi">
+        <div class="filter-tags" id="filterTags" role="list">
+            <button class="filter-tag active" data-cat="Tümü" onclick="filterAllPosts(this, 'Tümü')" role="listitem">Tümü</button>
+            <button class="filter-tag" data-cat="Sanallaştırma" onclick="filterAllPosts(this, 'Sanallaştırma')" role="listitem">🖥️ Sanallaştırma</button>
+            <button class="filter-tag" data-cat="VMware" onclick="filterAllPosts(this, 'VMware')" role="listitem">⚙️ VMware</button>
+            <button class="filter-tag" data-cat="VDI" onclick="filterAllPosts(this, 'VDI')" role="listitem">🖱️ VDI</button>
+            <button class="filter-tag" data-cat="Linux" onclick="filterAllPosts(this, 'Linux')" role="listitem">🐧 Linux</button>
+            <button class="filter-tag" data-cat="Microsoft" onclick="filterAllPosts(this, 'Microsoft')" role="listitem">💻 Microsoft</button>
+        </div>
+        <button class="filter-search-btn" onclick="openSearch()" aria-label="Ara">
+            🔍 Yazı ara <kbd>⌘K</kbd>
+        </button>
+    </div>
+
+    <!-- TÜM MAKALELER GRID -->
+    <main class="all-posts-section" id="allPostsPage">
+        <div class="posts-grid" id="postsGrid"></div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="footer-inner">
+            <div class="footer-copy">© 2026 <span>burakpehlivanoglu</span> — Tüm hakları saklıdır.</div>
+            <div class="footer-links">
+                <a href="index.html">Ana Sayfa</a>
+                <a href="index.html#hakkimda">Hakkımda</a>
+                <a href="index.html#bulten">Bülten</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Veri Dosyaları -->
+    <script src="data/posts.js"></script>
+
+    <!-- Uygulama Kodu -->
+    <script src="assets/js/app.js"></script>
+
+    <!-- Makaleler sayfasına özel filtre mantığı -->
+    <script>
+        (function () {
+            let _currentCat = 'Tümü';
+
+            window.filterAllPosts = function (btn, cat) {
+                _currentCat = cat;
+
+                // Filtre butonlarını güncelle
+                document.querySelectorAll('.filter-tag').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                // Grid'i temizle ve yeniden çiz
+                const grid = document.getElementById('postsGrid');
+                if (!grid || typeof allPosts === 'undefined') return;
+                grid.innerHTML = '';
+
+                const _MONTHS = { 'Ocak':0,'Şubat':1,'Mart':2,'Nisan':3,'Mayıs':4,
+                                  'Haziran':5,'Temmuz':6,'Ağustos':7,'Eylül':8,
+                                  'Ekim':9,'Kasım':10,'Aralık':11 };
+                const sorted = [...allPosts].sort((a, b) => {
+                    const pd = s => { const [d,m,y] = s.split(' '); return new Date(+y,_MONTHS[m]??0,+d); };
+                    return pd(b.date) - pd(a.date);
+                });
+
+                const filtered = cat === 'Tümü' ? sorted : sorted.filter(p =>
+                    p.category === cat || p.tag.toLowerCase().includes(cat.toLowerCase())
+                );
+
+                if (filtered.length === 0) {
+                    grid.innerHTML = `
+                        <div class="no-results" style="grid-column:1/-1">
+                            <div class="no-results-icon">🔍</div>
+                            <strong>Bu kategoride henüz yazı yok.</strong>
+                            <p>Yakında içerik ekleniyor!</p>
+                        </div>`;
+                    return;
+                }
+
+                filtered.forEach(p => {
+                    const card = document.createElement('article');
+                    card.className = 'post-card reveal visible';
+                    card.dataset.category = p.category;
+                    card.tabIndex = 0;
+                    card.setAttribute('role', 'article');
+                    card.innerHTML = `
+                        <div class="post-img">
+                            <div class="post-img-inner ${p.bg}" aria-hidden="true">${p.icon}</div>
+                        </div>
+                        <div class="post-body">
+                            <div class="post-meta">
+                                <span class="post-tag">${p.tag}</span>
+                                <span class="post-date">${p.date}</span>
+                            </div>
+                            <h3 class="post-title">${p.title}</h3>
+                            <p class="post-excerpt">${p.excerpt}</p>
+                            <div class="post-footer">
+                                <span class="post-read-time">${p.readTime} okuma</span>
+                                <div class="post-arrow" aria-hidden="true">→</div>
+                            </div>
+                        </div>`;
+                    card.onclick = () => openArticle(p.id);
+                    card.onkeydown = e => { if (e.key === 'Enter') openArticle(p.id); };
+                    grid.appendChild(card);
+                });
+            };
+        })();
+    </script>
+</body>
+</html>
