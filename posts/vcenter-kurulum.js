@@ -1,0 +1,119 @@
+// =============================================================
+//  posts/vcenter-kurulum.js
+//  vCenter Server Kurulum Adımları: Sıfırdan Üretime
+//
+//  Bu dosya articles['vcenter-kurulum'] objesini tanımlar.
+//  Makaleyi düzenlemek için sadece content içindeki HTML'i değiştir.
+//  tag, date, readTime bilgileri data/posts.js'te de tutulur.
+// =============================================================
+
+articles['vcenter-kurulum'] = {
+    tag: 'VMware',
+    date: '20 Şubat 2026',
+    readTime: '11 dk okuma',
+    content: `
+<span class="article-tag">VMware · Kurulum Rehberi</span>
+                <h1>vCenter Server Kurulum Adımları: Sıfırdan Üretime</h1>
+                <div class="article-meta-row">
+                    <span>📅 20 Şubat 2026</span>
+                    <span>⏱ 11 dk okuma</span>
+                    <span>✍️ Burak Pehlivanoğlu</span>
+                </div>
+
+                <p>vCenter Server Appliance (VCSA), VMware sanallaştırma altyapısının yönetim merkezidir. ESXi host'larını, sanal makineleri, depolama ve ağ kaynaklarını tek bir noktadan yönetmenizi sağlar. Bu rehberde VCSA 8.x kurulumunu adım adım ele alıyoruz.</p>
+
+                <div class="callout">
+                    <strong>ℹ️ Ön Bilgi:</strong> Bu rehber VMware vSphere 8.x için geçerlidir. Kurulum ISO dosyasına ve en az bir ESXi host'una ihtiyacınız var. vCenter için minimum 14 vCPU, 22 GB RAM ve 579 GB disk alanı gerekmektedir (tiny deployment).
+                </div>
+
+                <h2>Ön Gereksinimler</h2>
+                <ul>
+                    <li><strong>DNS:</strong> VCSA için forward ve reverse DNS kaydı zorunludur. Deployment öncesi bu kayıtların çalıştığını doğrulayın</li>
+                    <li><strong>NTP:</strong> ESXi host ve VCSA aynı NTP sunucusuna senkronize olmalı</li>
+                    <li><strong>Ağ:</strong> VCSA'nın konuşlandırılacağı ESXi host'u ile aynı ağ segmentinde erişilebilir statik IP adresi</li>
+                    <li><strong>SSO Domaini:</strong> vsphere.local (varsayılan) veya özel bir SSO domain adı belirleyin</li>
+                    <li><strong>Portlar:</strong> 443, 902, 9443 portlarının firewall üzerinde açık olduğundan emin olun</li>
+                </ul>
+
+                <h2>Kurulum Aşamaları</h2>
+                <div class="step-grid">
+                    <div class="step-item">
+                        <div class="step-num">1</div>
+                        <div class="step-body">
+                            <strong>ISO'yu Mount Edin ve Installer'ı Başlatın</strong>
+                            <span>Windows, Linux veya macOS'ta ISO içindeki <code>vcsa-ui-installer</code> klasöründen ilgili işletim sistemi kurucusunu çalıştırın. "Install" seçeneğini seçin.</span>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">2</div>
+                        <div class="step-body">
+                            <strong>Hedef ESXi Host Bilgilerini Girin</strong>
+                            <span>VCSA'nın deploy edileceği ESXi host IP'si, root kullanıcı adı ve şifresi. SSL sertifikası uyarısını onaylayın.</span>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">3</div>
+                        <div class="step-body">
+                            <strong>VM Adı ve Root Şifresini Belirleyin</strong>
+                            <span>VCSA sanal makinesine bir isim verin. Root şifresi en az 8 karakter, büyük/küçük harf ve özel karakter içermelidir.</span>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">4</div>
+                        <div class="step-body">
+                            <strong>Deployment Size Seçimi</strong>
+                            <span>Ortam büyüklüğüne göre Tiny / Small / Medium / Large / X-Large seçin. 100 host ve 1000 VM'e kadar olan ortamlar için Small yeterlidir.</span>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">5</div>
+                        <div class="step-body">
+                            <strong>Datastore Seçimi</strong>
+                            <span>VCSA disk dosyalarının konuşlandırılacağı datastore'u seçin. Thin provisioning önerilir, Thick Eager ise performans kritik ortamlar için tercih edilebilir.</span>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">6</div>
+                        <div class="step-body">
+                            <strong>Ağ Konfigürasyonu</strong>
+                            <span>Port group, FQDN, statik IP, subnet mask, gateway ve DNS sunucu bilgilerini girin. FQDN mutlaka DNS'te çözünür olmalı.</span>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">7</div>
+                        <div class="step-body">
+                            <strong>Stage 1 Tamamlanması</strong>
+                            <span>Appliance deploy edilir. Bu aşama 15–25 dakika sürer. Tamamlandığında Stage 2'ye geçin.</span>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">8</div>
+                        <div class="step-body">
+                            <strong>Stage 2: SSO ve vCenter Konfigürasyonu</strong>
+                            <span>SSO domain adını, administrator şifresini ve NTP sunucusunu girin. CEIP (telemetry) katılım seçeneğini belirleyin. Konfigürasyon 10–20 dakika sürer.</span>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">9</div>
+                        <div class="step-body">
+                            <strong>Post-Deployment: İlk Giriş ve Datacenter Oluşturma</strong>
+                            <span><code>https://&lt;vcenter-fqdn&gt;/ui</code> adresine <code>administrator@vsphere.local</code> ile giriş yapın. Datacenter ve Cluster nesnelerini oluşturun, ESXi host'larınızı ekleyin.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <h2>Post-Deployment Kontrol Listesi</h2>
+                <ul>
+                    <li>Lisans anahtarlarını <strong>Administration → Licenses</strong> menüsünden ekleyin</li>
+                    <li>NTP senkronizasyonunu tüm host'larda doğrulayın</li>
+                    <li>vCenter'a Active Directory / LDAP kimlik kaynağı ekleyin</li>
+                    <li>Backup için <strong>vCenter Server Appliance Management Interface (VAMI)</strong>'yi konfigüre edin: <code>https://&lt;vcenter&gt;:5480</code></li>
+                    <li>DRS ve HA özelliklerini cluster seviyesinde aktif edin</li>
+                    <li>Alarm ve notification ayarlarını yapılandırın</li>
+                </ul>
+
+                <div class="callout">
+                    <strong>💡 Pro Tip:</strong> VCSA kurulumu tamamlandıktan sonra ilk yapmanız gereken şeylerden biri VAMI üzerinden file-based backup zamanlaması oluşturmaktır. vCenter'ın kendisi sanallaştırılmış ortamın yönetim katmanı olduğundan, yedeğini almadan her şey tehlikede demektir.
+                </div>
+    `
+};
